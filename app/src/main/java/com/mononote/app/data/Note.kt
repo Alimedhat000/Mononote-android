@@ -3,6 +3,18 @@ package com.mononote.app.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * A single note.
+ *
+ * Mononote holds at most one active note at a time: a note is active while
+ * [archivedAt] is null. Timestamps are epoch millis.
+ *
+ * @property id Auto-generated row id; 0 until the note is inserted.
+ * @property text The note body.
+ * @property createdAt When the note was first created.
+ * @property updatedAt When the note text was last saved.
+ * @property archivedAt When the note was archived, or null while active.
+ */
 @Entity(tableName = "notes")
 data class Note(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,

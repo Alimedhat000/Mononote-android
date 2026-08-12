@@ -6,6 +6,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/**
+ * Mononote typography: 18sp semibold titles and 18sp regular body text in
+ * Roboto (the platform default).
+ */
 val MononoteTypography =
     Typography(
         titleLarge =

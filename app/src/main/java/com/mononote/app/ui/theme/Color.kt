@@ -4,6 +4,20 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Mononote's color palette, exposed through a custom CompositionLocal rather
+ * than stock Material 3 defaults so screens share one set of tokens.
+ *
+ * @param background App background.
+ * @param cardSurface The editor card surface.
+ * @param primaryText Primary text.
+ * @param secondaryText Secondary/placeholder text; #9A9A9E in both themes.
+ * @param doneButtonFill Fill of the "Done" pill button.
+ * @param doneButtonText Text color on the "Done" pill button.
+ * @param menuButtonFill Fill of the circular overflow-menu button.
+ * @param menuButtonIcon Icon color of the overflow-menu button.
+ * @param statusRingIdle Color of the idle autosave status ring.
+ */
 @Immutable
 data class MononoteColors(
     val background: Color,
@@ -17,6 +31,7 @@ data class MononoteColors(
     val statusRingIdle: Color,
 )
 
+/** Light theme palette: white background, black text, gray surfaces. */
 val LightMononoteColors =
     MononoteColors(
         background = Color(0xFFFFFFFF),
@@ -30,6 +45,7 @@ val LightMononoteColors =
         statusRingIdle = Color(0xFF9A9A9E),
     )
 
+/** Dark theme palette: near-black background, white text, dark gray surfaces. */
 val DarkMononoteColors =
     MononoteColors(
         background = Color(0xFF121212),
@@ -43,4 +59,8 @@ val DarkMononoteColors =
         statusRingIdle = Color(0xFF9A9A9E),
     )
 
+/**
+ * CompositionLocal carrying the active palette; defaults to the light theme.
+ * Provided by [MononoteTheme].
+ */
 val LocalMononoteColors = staticCompositionLocalOf { LightMononoteColors }

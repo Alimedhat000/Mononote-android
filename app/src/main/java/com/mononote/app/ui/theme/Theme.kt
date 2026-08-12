@@ -34,12 +34,17 @@ private val DarkColorScheme =
         onPrimary = DarkMononoteColors.background,
     )
 
+/** Mononote shapes: 24dp rounded cards ([MononoteColors.cardSurface]) and pill buttons. */
 val MononoteShapes =
     Shapes(
         medium = RoundedCornerShape(24.dp),
         large = CircleShape,
     )
 
+/**
+ * Applies the Mononote theme: a system-driven light/dark palette exposed via
+ * [LocalMononoteColors], plus the Mononote typography and shapes.
+ */
 @Composable
 fun MononoteTheme(
     darkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme(),

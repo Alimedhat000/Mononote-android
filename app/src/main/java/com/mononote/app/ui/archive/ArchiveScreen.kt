@@ -18,6 +18,13 @@ import androidx.compose.ui.unit.dp
 import com.mononote.app.R
 import com.mononote.app.ui.theme.MononoteTheme
 
+/**
+ * Placeholder archive screen.
+ *
+ * Replaced in Phase 4 by the archive list: truncated note text, relative
+ * timestamps, and per-row restore / permanent-delete actions. Currently shows
+ * a back button and a title.
+ */
 @Composable
 fun ArchiveScreen(
     onBack: () -> Unit,

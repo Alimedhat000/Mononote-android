@@ -16,6 +16,14 @@ import androidx.compose.ui.unit.dp
 import com.mononote.app.R
 import com.mononote.app.ui.theme.MononoteTheme
 
+/**
+ * Placeholder editor screen.
+ *
+ * Replaced in Phase 3 by the real editor: a card with a transparent text
+ * field, a debounced autosave status indicator, and an overflow menu with
+ * archive/delete/archive-list actions. Currently shows the app name and a
+ * link to the archive screen.
+ */
 @Composable
 fun EditorScreen(
     onOpenArchive: () -> Unit,

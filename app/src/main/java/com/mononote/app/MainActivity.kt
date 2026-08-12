@@ -7,6 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import com.mononote.app.navigation.MononoteNavHost
 import com.mononote.app.ui.theme.MononoteTheme
 
+/**
+ * Entry activity. Renders the app edge-to-edge with the Mononote theme and
+ * hosts the navigation graph.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
