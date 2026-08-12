@@ -55,7 +55,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## Roadmap
 
 - [x] Phase 1 — Scaffold: Gradle, manifest, theme tokens, navigation shell
-- [ ] Phase 2 — Data layer: Room entity/DAO/DB, repository with single-note invariant
+- [x] Phase 2 — Data layer: Room entity/DAO/DB, repository with single-note invariant
 - [ ] Phase 3 — Editor screen: autosave, status indicator, overflow menu, archive/delete
 - [ ] Phase 4 — Archive screen: list, restore, permanent delete
 - [ ] Phase 5 — Home screen widget (Glance)

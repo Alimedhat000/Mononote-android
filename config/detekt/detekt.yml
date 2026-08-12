@@ -21,6 +21,18 @@ style:
     ignoreAnnotated:
       - "Preview"
 
+complexity:
+  # A Room DAO has one function per query by design (plus @Transaction
+  # orchestration helpers); splitting it to satisfy the function-count
+  # threshold would only hide intent.
+  TooManyFunctions:
+    excludes:
+      - "**/data/NotesDao.kt"
+      # Test classes grow one @Test method per case; the count threshold is
+      # meaningless there.
+      - "**/test/**/*.kt"
+      - "**/androidTest/**/*.kt"
+
 Compose:
   ComposableAnnotationNaming:
     active: true

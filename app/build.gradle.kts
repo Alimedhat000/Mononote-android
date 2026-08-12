@@ -55,6 +55,10 @@ ktlint {
     version.set(libs.versions.ktlint.get())
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 detekt {
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
     buildUponDefaultConfig = true

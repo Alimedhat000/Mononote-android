@@ -66,4 +66,34 @@ interface NotesDao {
         }
         setArchivedAt(restoreId, null)
     }
+
+    /**
+     * Returns the active note, creating a blank one with [createdAt] when none
+     * exists. Runs atomically: the read, the invariant assertion, and the
+     * insert share one transaction, so concurrent first access can never
+     * produce two active rows.
+     */
+    @Transaction
+    suspend fun getOrCreateBlankNote(createdAt: Long): Note {
+        val existing = getActiveNote()
+        if (existing != null) {
+            return existing
+        }
+        check(countActiveNotes() == 0) { "Single-active-note invariant violated" }
+        val id = upsert(Note(text = "", createdAt = createdAt, updatedAt = createdAt))
+        return Note(id = id, text = "", createdAt = createdAt, updatedAt = createdAt)
+    }
+
+    /**
+     * Atomically deletes the blank active note [deleteId] and activates
+     * [restoreId], used when restoring over an empty active note.
+     */
+    @Transaction
+    suspend fun deleteActiveThenRestore(
+        deleteId: Long,
+        restoreId: Long,
+    ) {
+        deleteById(deleteId)
+        setArchivedAt(restoreId, null)
+    }
 }

@@ -24,33 +24,22 @@ class NotesRepositoryTest {
     fun `getOrCreateActiveNote returns existing active note without creating`() =
         runTest {
             val existing = Note(id = 7, text = "existing", createdAt = 100, updatedAt = 200)
-            coEvery { dao.getActiveNote() } returns existing
+            coEvery { dao.getOrCreateBlankNote(clock) } returns existing
 
             assertEquals(existing, repository.getOrCreateActiveNote())
 
-            coVerify(exactly = 0) { dao.upsert(any()) }
+            coVerify(exactly = 1) { dao.getOrCreateBlankNote(clock) }
         }
 
     @Test
     fun `getOrCreateActiveNote creates a blank note when none exists`() =
         runTest {
-            coEvery { dao.getActiveNote() } returns null
-            coEvery { dao.upsert(any()) } returns 42L
+            val created = Note(id = 42, text = "", createdAt = clock, updatedAt = clock)
+            coEvery { dao.getOrCreateBlankNote(clock) } returns created
 
-            val result = repository.getOrCreateActiveNote()
+            assertEquals(created, repository.getOrCreateActiveNote())
 
-            assertEquals(Note(id = 42, text = "", createdAt = clock, updatedAt = clock), result)
-            coVerify {
-                dao.upsert(
-                    match {
-                        it.id == 0L &&
-                            it.text.isEmpty() &&
-                            it.archivedAt == null &&
-                            it.createdAt == clock &&
-                            it.updatedAt == clock
-                    },
-                )
-            }
+            coVerify(exactly = 1) { dao.getOrCreateBlankNote(clock) }
         }
 
     @Test
@@ -132,9 +121,24 @@ class NotesRepositoryTest {
                 Note(id = 2, text = "restored", createdAt = 5, updatedAt = 6, archivedAt = 100)
             clock = 700
 
-            repository.restoreNote(2)
+            val result = repository.restoreNote(2)
 
+            assertEquals(true, result)
             coVerify { dao.archiveActiveThenRestore(1, 700, 2) }
+            coVerify { settings.saveActiveNoteSnapshot("restored") }
+        }
+
+    @Test
+    fun `restoreNote deletes blank active note and promotes the restored note`() =
+        runTest {
+            coEvery { dao.getActiveNote() } returns Note(id = 1, text = "", createdAt = 10, updatedAt = 20)
+            coEvery { dao.getNoteById(2) } returns
+                Note(id = 2, text = "restored", createdAt = 5, updatedAt = 6, archivedAt = 100)
+
+            val result = repository.restoreNote(2)
+
+            assertEquals(true, result)
+            coVerify { dao.deleteActiveThenRestore(1, 2) }
             coVerify { settings.saveActiveNoteSnapshot("restored") }
         }
 
@@ -145,9 +149,24 @@ class NotesRepositoryTest {
             coEvery { dao.getNoteById(5) } returns
                 Note(id = 5, text = "back", createdAt = 1, updatedAt = 2, archivedAt = 50)
 
-            repository.restoreNote(5)
+            val result = repository.restoreNote(5)
 
-            coVerify { dao.archiveActiveThenRestore(null, clock, 5) }
+            assertEquals(true, result)
+            coVerify { dao.setArchivedAt(5, null) }
             coVerify { settings.saveActiveNoteSnapshot("back") }
+        }
+
+    @Test
+    fun `restoreNote returns false without writing when the note does not exist`() =
+        runTest {
+            coEvery { dao.getNoteById(99) } returns null
+
+            val result = repository.restoreNote(99)
+
+            assertEquals(false, result)
+            coVerify(exactly = 0) { dao.setArchivedAt(any(), any()) }
+            coVerify(exactly = 0) { dao.deleteActiveThenRestore(any(), any()) }
+            coVerify(exactly = 0) { dao.archiveActiveThenRestore(any(), any(), any()) }
+            coVerify(exactly = 0) { settings.saveActiveNoteSnapshot(any()) }
         }
 }

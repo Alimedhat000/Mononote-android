@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [Note::class],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class NotesDatabase : RoomDatabase() {
     /** Returns the DAO used to query and mutate notes. */

@@ -6,9 +6,10 @@ import kotlinx.coroutines.flow.Flow
  * Single source of truth for notes, coordinating Room and DataStore.
  *
  * Enforces the single-active-note invariant: at most one note with a null
- * [Note.archivedAt] exists at any time. Reads reuse the existing active note
- * rather than inserting a second row, and [restoreNote] archives the current
- * active note (transactionally) before activating the restored one.
+ * [Note.archivedAt] exists at any time. The read-and-create path runs inside
+ * one transaction and asserts the invariant before inserting, so a second
+ * active note can never appear. [restoreNote] archives a non-blank active
+ * note, or deletes a blank one, before activating the restored note.
  *
  * Every save of the active note text also updates the widget snapshot in the
  * same suspend call, so the home-screen widget never shows stale text.
@@ -26,10 +27,11 @@ class NotesRepository(
     fun observeActiveNote(): Flow<Note?> = dao.observeActiveNote()
 
     /**
-     * Returns the active note, creating a blank one when none exists.
-     * Never creates a second active note.
+     * Returns the active note, creating a blank one when none exists. The
+     * read-and-create happens in one transaction that asserts the
+     * single-active-note invariant before inserting.
      */
-    suspend fun getOrCreateActiveNote(): Note = dao.getActiveNote() ?: createBlankNote()
+    suspend fun getOrCreateActiveNote(): Note = dao.getOrCreateBlankNote(clock())
 
     /**
      * Saves [text] as the active note, creating it on first use, and updates
@@ -70,21 +72,23 @@ class NotesRepository(
     suspend fun getArchivedNotes(): List<Note> = dao.getArchivedNotes()
 
     /**
-     * Restores [noteId] as the active note. The current active note is
-     * archived first in one transaction, then the widget snapshot is refreshed
-     * with the restored note's text.
+     * Restores [noteId] as the active note, returning true on success.
+     *
+     * A blank active note is deleted and the restored note promoted; a
+     * non-blank active note is archived first. Both transitions are
+     * transactional. Returns false without writing anything when no note with
+     * [noteId] exists, so callers can report the failure instead of silently
+     * blanking the widget snapshot.
      */
-    suspend fun restoreNote(noteId: Long) {
+    suspend fun restoreNote(noteId: Long): Boolean {
+        val restored = dao.getNoteById(noteId) ?: return false
         val active = dao.getActiveNote()
-        dao.archiveActiveThenRestore(active?.id, clock(), noteId)
-        val restored = dao.getNoteById(noteId)
-        settingsDataStore.saveActiveNoteSnapshot(restored?.text.orEmpty())
-    }
-
-    private suspend fun createBlankNote(): Note {
-        val now = clock()
-        val note = Note(text = "", createdAt = now, updatedAt = now)
-        val id = dao.upsert(note)
-        return note.copy(id = id)
+        when {
+            active == null -> dao.setArchivedAt(noteId, null)
+            active.text.isBlank() -> dao.deleteActiveThenRestore(active.id, noteId)
+            else -> dao.archiveActiveThenRestore(active.id, clock(), noteId)
+        }
+        settingsDataStore.saveActiveNoteSnapshot(restored.text)
+        return true
     }
 }
