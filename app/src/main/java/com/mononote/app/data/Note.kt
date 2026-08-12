@@ -23,3 +23,13 @@ data class Note(
     val updatedAt: Long,
     val archivedAt: Long? = null,
 )
+
+/**
+ * Whether the note holds no meaningful content (empty or whitespace-only).
+ *
+ * Single source of truth for the "blank note" definition: the editor's
+ * overflow menu (Phase 3) and the restore flow (Phase 4) must use this so the
+ * blank checks never diverge.
+ */
+val Note.isBlankNote: Boolean
+    get() = text.isBlank()

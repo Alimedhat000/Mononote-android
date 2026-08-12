@@ -62,20 +62,12 @@ class NotesRepositoryTest {
         runTest {
             coEvery { dao.getActiveNote() } returns null
             clock = 300
+            coEvery { dao.getOrCreateBlankNote(any()) } returns
+                Note(id = 42, text = "", createdAt = clock, updatedAt = clock)
 
             repository.saveActiveNote("hello")
 
-            coVerify {
-                dao.upsert(
-                    match {
-                        it.id == 0L &&
-                            it.text == "hello" &&
-                            it.createdAt == clock &&
-                            it.updatedAt == clock &&
-                            it.archivedAt == null
-                    },
-                )
-            }
+            coVerify { dao.upsert(Note(id = 42, text = "hello", createdAt = 300, updatedAt = 300, archivedAt = null)) }
             coVerify { settings.saveActiveNoteSnapshot("hello") }
         }
 

@@ -35,13 +35,16 @@ class NotesRepository(
 
     /**
      * Saves [text] as the active note, creating it on first use, and updates
-     * the widget snapshot in the same suspend call.
+     * the widget snapshot in the same suspend call. The create path goes
+     * through the transactional [NotesDao.getOrCreateBlankNote], so a first
+     * write can never race into a second active row.
      */
     suspend fun saveActiveNote(text: String) {
         val now = clock()
         val active = dao.getActiveNote()
         if (active == null) {
-            dao.upsert(Note(text = text, createdAt = now, updatedAt = now))
+            val created = dao.getOrCreateBlankNote(now)
+            dao.upsert(created.copy(text = text, updatedAt = now))
         } else {
             dao.upsert(active.copy(text = text, updatedAt = now))
         }
@@ -85,7 +88,7 @@ class NotesRepository(
         val active = dao.getActiveNote()
         when {
             active == null -> dao.setArchivedAt(noteId, null)
-            active.text.isBlank() -> dao.deleteActiveThenRestore(active.id, noteId)
+            active.isBlankNote -> dao.deleteActiveThenRestore(active.id, noteId)
             else -> dao.archiveActiveThenRestore(active.id, clock(), noteId)
         }
         settingsDataStore.saveActiveNoteSnapshot(restored.text)
