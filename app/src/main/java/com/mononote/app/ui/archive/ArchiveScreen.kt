@@ -13,15 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mononote.app.R
+import com.mononote.app.ui.theme.MononoteTheme
 
 @Composable
 fun ArchiveScreen(
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -31,5 +34,13 @@ fun ArchiveScreen(
             text = stringResource(R.string.archived_notes),
             style = MaterialTheme.typography.titleLarge,
         )
+    }
+}
+
+@Preview(showBackground = true, name = "Archive placeholder")
+@Composable
+private fun ArchiveScreenPreview() {
+    MononoteTheme {
+        ArchiveScreen(onBack = {})
     }
 }

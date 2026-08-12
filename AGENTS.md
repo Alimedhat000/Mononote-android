@@ -5,8 +5,11 @@ Mononote for Android — minimalist single-note app (one active note at a time).
 ## Build & verify
 
 - `./gradlew :app:assembleDebug` — build; APK at `app/build/outputs/apk/debug/app-debug.apk` (~2 min, builds clean).
-- No tests or lint configured yet (no test source set). If you add them, record the commands here.
-- Gradle wrapper 8.14.3; `org.gradle.configuration-cache=true` is on.
+- Lint: `./gradlew :app:ktlintCheck` (auto-fix with `:app:ktlintFormat`) and `./gradlew :app:detekt`. Config lives in `.editorconfig` and `config/detekt/detekt.yml`.
+- Common commands are aliased in the `justfile` (`just check`, `just build`, `just test`, `just lint`, `just format`, `just detekt`, `just hooks`, ...).
+- Unit tests (JUnit 5): `./gradlew :app:testDebugUnitTest`. Instrumented Compose UI tests (JUnit 4): `./gradlew :app:assembleDebugAndroidTest` (compiles; running needs an emulator/device).
+- CI (`.github/workflows/ci.yml`) runs ktlintCheck + detekt + testDebugUnitTest + assembleDebug on every PR. Lefthook git hooks (`.lefthook.yml`) run ktlint/detekt on pre-commit — install with `npm install` (or `npx lefthook install`). Renovate (`.github/workflows/renovate-automerge.yml`) opens dep PRs; patch bumps auto-merge behind the `renovate/automerge` label.
+- Gradle wrapper 8.14.3; `org.gradle.configuration-cache=true` and build cache are on.
 
 ## Toolchain — do NOT bump blindly
 
@@ -14,6 +17,7 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 
 - **AGP 9.x is deliberately avoided.** It enables built-in Kotlin and breaks the classic `org.jetbrains.kotlin.android` plugin setup. Upgrading is a migration, not a version bump.
 - The Compose compiler plugin version must track the Kotlin version (both 2.1.20), and KSP must match Kotlin.
+- **Lint-tool versions are a locked set:** ktlint 1.5.0 + detekt 1.23.8 + compose-rules 0.4.23. compose-rules 0.4.23 is the last that supports BOTH ktlint 1.5.x AND detekt 1.23.x; newer compose-rules need ktlint 1.8/detekt 2.0-alpha. Do not bump one in isolation — the ktlint version is pinned in the `ktlint {}` block as well as the catalog.
 - Env: `local.properties` pins `sdk.dir=/home/ali/Android/Sdk` (platforms 35/36 installed). Gradle targets `jvmTarget 17`; `JAVA_HOME` is JDK 17 while `java` on PATH is 21 — do not assume which.
 - minSdk 26 ⇒ launcher icon is a vector adaptive icon only (`mipmap-anydpi-v26/`, `drawable/ic_launcher_*`); never add PNG mipmaps.
 
@@ -31,6 +35,7 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 ## Current state & architecture
 
 - Phase 1 (scaffold) done. Phases 2–6 pending: data layer (Room/DataStore/repository), editor screen, archive screen, Glance widget, polish.
+- Dev tooling wired (Phase 1.5): ktlint + detekt + compose-rules, Lefthook hooks, GitHub Actions CI, Renovate, Timber, LeakCanary (debug), JUnit 5 + Turbine + MockK unit tests, Compose UI test scaffold. Unit tests live in `src/test` (JUnit 5), instrumented in `src/androidTest` (JUnit 4).
 - `data/` (Note entity, DAO, Room DB, repository) and `widget/` do NOT exist yet — their deps are already in the version catalog.
 - `ui/editor/EditorScreen.kt` and `ui/archive/ArchiveScreen.kt` are placeholder stubs awaiting Phases 3/4.
 - Design tokens: `ui/theme/Color.kt` defines `MononoteColors` + `LocalMononoteColors` (CompositionLocal). Use these, not stock Material 3 defaults. Secondary text is `#9A9A9E` in BOTH light and dark. `MononoteTheme` (Theme.kt) follows the system theme.

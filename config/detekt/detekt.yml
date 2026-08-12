@@ -1,0 +1,93 @@
+# detekt configuration. Builds upon detekt's default config
+# (buildUponDefaultConfig = true in app/build.gradle.kts).
+
+naming:
+  # detekt's generic FunctionNaming can't ignore @Composable functions;
+  # compose-rules' Compose.ComposableNaming covers composable naming instead.
+  FunctionNaming:
+    active: false
+  # Color.kt follows the standard Compose theme file naming convention
+  # (Color.kt / Type.kt / Theme.kt) even though it declares MononoteColors.
+  MatchingDeclarationName:
+    excludes:
+      - "**/ui/theme/Color.kt"
+
+style:
+  # Compose layouts are full of dimension literals (24.dp, 52.dp, ...).
+  MagicNumber:
+    active: false
+  # Private @Preview composables are consumed by Android Studio, not code.
+  UnusedPrivateMember:
+    ignoreAnnotated:
+      - "Preview"
+
+Compose:
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableParamOrder:
+    active: true
+  CompositionLocalAllowlist:
+    active: true
+    allowedCompositionLocals:
+      - "LocalMononoteColors"
+  CompositionLocalNaming:
+    active: true
+  # Structural "single emitter" rules are a poor fit for screen-level
+  # composables (a screen has many siblings by design). Disabled deliberately.
+  ContentEmitterReturningValues:
+    active: false
+  ContentTrailingLambda:
+    active: true
+  ContentSlotReused:
+    active: true
+  DefaultsVisibility:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+  LambdaParameterInRestartableEffect:
+    active: true
+  Material2:
+    active: false
+  ModifierClickableOrder:
+    active: true
+  ModifierComposed:
+    active: true
+  ModifierMissing:
+    active: true
+    checkModifiersForVisibility: only_public
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: false
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewNaming:
+    active: false
+  PreviewPublic:
+    active: true
+  RememberMissing:
+    active: true
+  RememberContentMissing:
+    active: true
+  UnstableCollections:
+    active: false
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true

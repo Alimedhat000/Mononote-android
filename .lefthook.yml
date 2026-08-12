@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: false
+  commands:
+    ktlint:
+      glob: "*.{kt,kts}"
+      run: ./gradlew :app:ktlintCheck
+    detekt:
+      glob: "*.kt"
+      run: ./gradlew :app:detekt

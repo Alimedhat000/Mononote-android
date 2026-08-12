@@ -1,0 +1,10 @@
+{
+  "name": "mononote-android",
+  "private": true,
+  "scripts": {
+    "postinstall": "lefthook install"
+  },
+  "devDependencies": {
+    "lefthook": "^2.1.10"
+  }
+}

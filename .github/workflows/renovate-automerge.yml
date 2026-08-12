@@ -1,0 +1,26 @@
+# Auto-merges Renovate pull requests that carry the `renovate/automerge`
+# label (patch-level bumps get it via renovate.json packageRules).
+# Merge only happens after CI passes if the CI status is required on the
+# repository (branch protection). Requires the Renovate GitHub App to be
+# installed so `renovate[bot]` opens PRs in the first place.
+name: Renovate auto-merge
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'renovate[bot]' && contains(github.event.pull_request.labels.*.name, 'renovate/automerge')
+    steps:
+      - name: Enable auto-merge
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash

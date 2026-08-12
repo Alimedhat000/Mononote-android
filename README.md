@@ -25,6 +25,15 @@ Inspired by [Mononote](https://www.digitalminimalist.com/blog/introducing-monono
 | Widget       | Jetpack Glance                                   |
 | Architecture | MVVM (ViewModel + StateFlow)                     |
 
+## Development tooling
+
+- **Linting:** ktlint + detekt, both with [compose-rules](https://mrmans0n.github.io/compose-rules) for Compose-specific checks
+- **Git hooks:** Lefthook (`npm install` to install) — runs lint on pre-commit
+- **CI:** GitHub Actions — ktlint, detekt, unit tests, and build on every PR
+- **Dependencies:** Renovate keeps `gradle/libs.versions.toml` up to date; patch bumps auto-merge behind the `renovate/automerge` label
+- **Debugging:** Timber for logging, LeakCanary for memory leaks (debug builds only)
+- **Testing:** JUnit 5 + MockK + Turbine (unit), Compose UI tests (instrumented)
+
 ## Requirements
 
 - JDK 17+
@@ -41,22 +50,6 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Install
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-## Project structure
-
-```
-app/src/main/java/com/mononote/app/
-├── MainActivity.kt            # Single-activity Compose host
-├── MononoteApp.kt             # Application class
-├── data/                      # Note entity, DAO, Room DB, repository (in progress)
-├── navigation/
-│   └── MononoteNavHost.kt     # editor → archive routes
-├── ui/
-│   ├── editor/                # Active-note editor screen (in progress)
-│   ├── archive/               # Archived notes screen (in progress)
-│   └── theme/                 # MononoteColors, typography, theme
-└── widget/                    # Glance home-screen widget (in progress)
 ```
 
 ## Roadmap

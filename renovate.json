@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["gradle", "gradle-wrapper"],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Auto-merge patch-level bumps once CI is trusted",
+      "matchUpdateTypes": ["patch", "pin", "digest"],
+      "labels": ["renovate/automerge"]
+    }
+  ]
+}
