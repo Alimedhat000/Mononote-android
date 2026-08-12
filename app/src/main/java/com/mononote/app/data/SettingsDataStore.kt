@@ -1,11 +1,19 @@
 package com.mononote.app.data
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
+/**
+ * The app-wide Preferences DataStore, shared between the repository (writer)
+ * and the home-screen widget (reader) so both see the same snapshot.
+ */
+val Context.mononoteDataStore: DataStore<Preferences> by preferencesDataStore(name = "mononote")
 
 /**
  * DataStore-backed preferences for Mononote.
