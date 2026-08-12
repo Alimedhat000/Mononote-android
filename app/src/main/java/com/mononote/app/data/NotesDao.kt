@@ -2,6 +2,7 @@ package com.mononote.app.data
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -33,4 +34,16 @@ interface NotesDao {
 
     @Query("DELETE FROM notes WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Transaction
+    suspend fun archiveActiveThenRestore(
+        archiveActiveId: Long?,
+        archivedAt: Long,
+        restoreId: Long,
+    ) {
+        if (archiveActiveId != null) {
+            setArchivedAt(archiveActiveId, archivedAt)
+        }
+        setArchivedAt(restoreId, null)
+    }
 }
