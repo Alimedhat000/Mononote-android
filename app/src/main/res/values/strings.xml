@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mononote</string>
+    <string name="placeholder_text">Start typing...</string>
+    <string name="done">Done</string>
+    <string name="archive_note">Archive note</string>
+    <string name="delete_note">Delete note</string>
+    <string name="view_archived_notes">View archived notes</string>
+    <string name="archived_notes">Archived Notes</string>
+    <string name="no_archived_notes">No archived notes yet</string>
+    <string name="note_archived">Note archived</string>
+    <string name="note_deleted">Note deleted</string>
+    <string name="delete_note_dialog_title">Delete note?</string>
+    <string name="delete_note_dialog_message">This can\'t be undone.</string>
+    <string name="restore">Restore</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+</resources>
