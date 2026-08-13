@@ -1,6 +1,8 @@
 package com.mononote.app.ui.editor
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -109,7 +111,7 @@ fun EditorScreen(
             onOpenArchive = onOpenArchive,
         )
         Spacer(Modifier.height(12.dp))
-        EditorCard(
+        CenteredEditorCard(
             text = text,
             onTextChange = viewModel::updateText,
             characterLimitProgress = characterLimitProgress,
@@ -236,6 +238,37 @@ private fun DeleteNoteDialog(
 }
 
 /**
+ * The note card, compact and vertically centered in the remaining space. Its
+ * height snaps to [noteCardHeight] when the keyboard is hidden and to the
+ * available space above the keyboard while it is shown.
+ */
+@Composable
+private fun CenteredEditorCard(
+    text: String,
+    onTextChange: (String) -> Unit,
+    characterLimitProgress: Float,
+    onFocusChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center,
+    ) {
+        EditorCard(
+            text = text,
+            onTextChange = onTextChange,
+            characterLimitProgress = characterLimitProgress,
+            onFocusChanged = onFocusChanged,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(animationSpec = tween(150))
+                    .height(noteCardHeight),
+        )
+    }
+}
+
+/**
  * The note surface: a rounded card with a borderless multiline text field and
  * the character-limit progress ring pinned to its bottom-right corner.
  * [onFocusChanged] reports the field's focus so the screen can swap the Done
@@ -335,3 +368,10 @@ private fun CharacterLimitIndicator(
         }
     }
 }
+
+/**
+ * The note card's compact height when the keyboard is closed, matching the
+ * size it naturally takes once the keyboard is open. The card clamps to the
+ * available space when it is tighter than this (e.g. small screens).
+ */
+private val noteCardHeight = 320.dp
