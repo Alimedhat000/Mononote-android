@@ -90,9 +90,8 @@ internal fun DoneButton(
  */
 @Composable
 internal fun NoteActionsBar(
-    isLive: Boolean,
-    canArchiveOrDelete: Boolean,
-    onArchive: () -> Unit,
+    state: EditorBottomBarState,
+    onOpenArchive: () -> Unit,
     onDelete: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
@@ -102,15 +101,19 @@ internal fun NoteActionsBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (canArchiveOrDelete) {
-            ActionCircleButton(
-                icon = painterResource(LucideR.drawable.lucide_ic_archive),
-                contentDescription = stringResource(R.string.archive_note),
-                containerColor = colors.menuButtonFill,
-                contentColor = colors.menuButtonIcon,
-                onClick = onArchive,
+        ActionCircleButton(
+            icon = painterResource(LucideR.drawable.lucide_ic_archive),
+            contentDescription = stringResource(R.string.archived_notes),
+            containerColor = colors.menuButtonFill,
+            contentColor = colors.menuButtonIcon,
+            onClick = onOpenArchive,
+        )
+        if (state.canArchiveOrDelete) {
+            GoLiveButton(
+                isLive = state.isLive,
+                snackbarHostState = snackbarHostState,
+                noteText = state.noteText,
             )
-            GoLiveButton(isLive = isLive, snackbarHostState = snackbarHostState)
             ActionCircleButton(
                 icon = painterResource(LucideR.drawable.lucide_ic_trash),
                 contentDescription = stringResource(R.string.delete_note),
@@ -127,6 +130,7 @@ internal data class EditorBottomBarState(
     val isEditing: Boolean,
     val isLive: Boolean,
     val canArchiveOrDelete: Boolean,
+    val noteText: String,
 )
 
 /**
@@ -137,7 +141,7 @@ internal data class EditorBottomBarState(
 @Composable
 internal fun AnimatedEditorActions(
     state: EditorBottomBarState,
-    onArchive: () -> Unit,
+    onOpenArchive: () -> Unit,
     onDelete: () -> Unit,
     onDone: () -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -154,9 +158,8 @@ internal fun AnimatedEditorActions(
             DoneButton(onClick = onDone)
         } else {
             NoteActionsBar(
-                isLive = state.isLive,
-                canArchiveOrDelete = state.canArchiveOrDelete,
-                onArchive = onArchive,
+                state = state,
+                onOpenArchive = onOpenArchive,
                 onDelete = onDelete,
                 snackbarHostState = snackbarHostState,
             )
@@ -172,7 +175,9 @@ internal fun AnimatedEditorActions(
  * before starting; a denial surfaces a snackbar.
  *
  * Going live always starts [LiveNoteService], so the ongoing notification
- * works regardless of live-update support. On API 36+ the notification also
+ * works regardless of live-update support. [noteText] is passed to the service
+ * so the notification opens showing the current text even before the
+ * debounced autosave reaches the repository. On API 36+ the notification also
  * requests promotion to a Live Update; when the user has disabled live updates
  * in settings, the service still starts and a snackbar offers a Settings
  * action to re-enable them.
@@ -181,6 +186,7 @@ internal fun AnimatedEditorActions(
 internal fun GoLiveButton(
     isLive: Boolean,
     snackbarHostState: SnackbarHostState,
+    noteText: String,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
@@ -191,7 +197,9 @@ internal fun GoLiveButton(
     val enableLiveUpdates = stringResource(R.string.live_updates_enable)
 
     fun startLive() {
-        context.startForegroundService(Intent(context, LiveNoteService::class.java))
+        context.startForegroundService(
+            Intent(context, LiveNoteService::class.java).putExtra(LiveNoteService.EXTRA_NOTE_TEXT, noteText),
+        )
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
             !LiveNoteNotifications.canPostPromoted(context)

@@ -18,16 +18,22 @@ import kotlinx.coroutines.launch
  * Foreground service behind "Go live": keeps the active note visible as a
  * persistent live notification that stays in sync as the note is edited.
  *
- * Started with [ACTION_START] (the default when no action is set) it posts a
- * foreground notification with the current text and observes the repository so
- * every autosave refreshes the notification. When the active note disappears
- * (archived, deleted, or never created) the service stops itself; the Stop
- * notification action stops it on demand. On process death Android removes the
- * foreground notification, so a stale note can never linger.
+ * Started with the current editor text in [EXTRA_NOTE_TEXT], it posts a
+ * foreground notification with that text and observes the repository so every
+ * autosave refreshes it. Because the editor's autosave is debounced, the
+ * repository may still hold the previous text (or no row at all) when the
+ * service starts; the observer keeps the start text until a real note arrives
+ * instead of stopping on that transient state. The service only stops itself
+ * when a note that was already shown disappears (archived or deleted). On
+ * process death Android removes the foreground notification, so a stale note
+ * can never linger.
  */
 class LiveNoteService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var observationJob: Job? = null
+
+    /** True once the observer has shown a non-blank note. */
+    private var shownNote = false
 
     private val app: MononoteApp get() = applicationContext as MononoteApp
     private val controller: LiveNoteController get() = app.liveNoteController
@@ -49,7 +55,8 @@ class LiveNoteService : Service() {
             stopLive()
             return START_NOT_STICKY
         }
-        val notification = LiveNoteNotifications.build(this, "")
+        val initialText = intent?.getStringExtra(EXTRA_NOTE_TEXT).orEmpty()
+        val notification = LiveNoteNotifications.build(this, initialText)
         ServiceCompat.startForeground(
             this,
             LiveNoteNotifications.NOTIFICATION_ID,
@@ -66,10 +73,14 @@ class LiveNoteService : Service() {
         observationJob =
             serviceScope.launch {
                 repository.observeActiveNote().collect { note ->
-                    if (note == null) {
-                        stopLive()
-                    } else {
-                        LiveNoteNotifications.notify(this@LiveNoteService, note.text)
+                    when {
+                        note != null && note.text.isNotBlank() -> {
+                            shownNote = true
+                            LiveNoteNotifications.notify(this@LiveNoteService, note.text)
+                        }
+                        note == null && shownNote -> stopLive()
+                        note == null -> Unit
+                        else -> LiveNoteNotifications.notify(this@LiveNoteService, note.text)
                     }
                 }
             }
@@ -90,5 +101,8 @@ class LiveNoteService : Service() {
     companion object {
         /** Action sent to stop the live note, from the notification Stop button. */
         const val ACTION_STOP = "com.mononote.app.action.STOP_LIVE"
+
+        /** Extra carrying the editor's current text when going live. */
+        const val EXTRA_NOTE_TEXT = "com.mononote.app.extra.NOTE_TEXT"
     }
 }
