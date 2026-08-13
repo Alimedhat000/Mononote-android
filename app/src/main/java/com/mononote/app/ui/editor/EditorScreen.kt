@@ -126,7 +126,7 @@ fun EditorScreen(
                     canArchiveOrDelete = canArchiveOrDelete,
                     noteText = text,
                 ),
-            onOpenArchive = onOpenArchive,
+            onArchive = viewModel::archiveActiveNote,
             onDelete = { showDeleteDialog = true },
             onDone = {
                 keyboardController?.hide()

@@ -91,7 +91,7 @@ internal fun DoneButton(
 @Composable
 internal fun NoteActionsBar(
     state: EditorBottomBarState,
-    onOpenArchive: () -> Unit,
+    onArchive: () -> Unit,
     onDelete: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
@@ -103,10 +103,10 @@ internal fun NoteActionsBar(
     ) {
         ActionCircleButton(
             icon = painterResource(LucideR.drawable.lucide_ic_archive),
-            contentDescription = stringResource(R.string.archived_notes),
+            contentDescription = stringResource(R.string.archive_note),
             containerColor = colors.menuButtonFill,
             contentColor = colors.menuButtonIcon,
-            onClick = onOpenArchive,
+            onClick = onArchive,
         )
         if (state.canArchiveOrDelete) {
             GoLiveButton(
@@ -141,7 +141,7 @@ internal data class EditorBottomBarState(
 @Composable
 internal fun AnimatedEditorActions(
     state: EditorBottomBarState,
-    onOpenArchive: () -> Unit,
+    onArchive: () -> Unit,
     onDelete: () -> Unit,
     onDone: () -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -159,7 +159,7 @@ internal fun AnimatedEditorActions(
         } else {
             NoteActionsBar(
                 state = state,
-                onOpenArchive = onOpenArchive,
+                onArchive = onArchive,
                 onDelete = onDelete,
                 snackbarHostState = snackbarHostState,
             )
