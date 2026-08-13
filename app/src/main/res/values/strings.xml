@@ -6,8 +6,8 @@
     <string name="done">Done</string>
     <string name="archive_note">Archive note</string>
     <string name="delete_note">Delete note</string>
-    <string name="view_archived_notes">View archived notes</string>
     <string name="archived_notes">Archived Notes</string>
+    <string name="settings">Settings</string>
     <string name="no_archived_notes">No archived notes yet</string>
     <string name="note_archived">Note archived</string>
     <string name="note_deleted">Note deleted</string>

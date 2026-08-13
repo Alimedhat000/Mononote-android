@@ -102,19 +102,11 @@ class EditorScreenTest {
     }
 
     @Test
-    fun overflowMenuOffersDeleteAndArchivedNotesWhenNotEmpty() {
-        runBlocking { app.repository.saveActiveNote("hello world") }
+    fun overflowMenuOffersArchivedNotesAndSettings() {
         setEditorContent()
         composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Delete note").assertIsDisplayed()
-        composeRule.onNodeWithText("View archived notes").assertIsDisplayed()
-    }
-
-    @Test
-    fun overflowMenuHidesDeleteWhenBlank() {
-        setEditorContent()
-        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Archived Notes").assertIsDisplayed()
+        composeRule.onNodeWithText("Settings").assertIsDisplayed()
         composeRule.onNodeWithText("Delete note").assertDoesNotExist()
-        composeRule.onNodeWithText("View archived notes").assertIsDisplayed()
     }
 }

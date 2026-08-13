@@ -66,8 +66,9 @@ import kotlinx.coroutines.flow.SharedFlow
  * the full-width Done pill while the field is focused, and otherwise the
  * go-live action bar: archive the current note, go live (a persistent live
  * notification of the note), and delete. The overflow menu reaches the
- * archived-notes screen. Archive and delete surface a snackbar and delete asks
- * for confirmation first.
+ * archived-notes screen and a settings entry (the settings screen lands in a
+ * later phase). Archive and delete surface a snackbar and delete asks for
+ * confirmation first.
  *
  * @param repository Single source of truth for note data; injects the
  *   [EditorViewModel].
@@ -106,9 +107,7 @@ fun EditorScreen(
             ),
     ) {
         EditorTopBar(
-            canArchiveOrDelete = canArchiveOrDelete,
             onOpenArchive = onOpenArchive,
-            onDelete = { showDeleteDialog = true },
         )
         Spacer(Modifier.height(12.dp))
         CenteredEditorCard(
