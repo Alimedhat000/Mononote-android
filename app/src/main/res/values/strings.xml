@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mononote</string>
+    <string name="more_options">More options</string>
     <string name="placeholder_text">Start typing...</string>
     <string name="done">Done</string>
     <string name="archive_note">Archive note</string>
