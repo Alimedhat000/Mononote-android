@@ -9,16 +9,25 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.mononote.app.MainActivity
 import com.mononote.app.R
+import timber.log.Timber
 
 /**
  * Builds and posts the live-note notification: the note's current text shown
  * as a persistent, non-dismissable notification that opens the editor on tap
  * and offers a Stop action.
+ *
+ * On API 36+ the notification requests promotion to a Live Update (status-bar
+ * chip, expanded on the lock screen) using an eligible [ProgressStyle] with
+ * `setRequestPromotedOngoing`; on older platforms it falls back to the classic
+ * expandable [NotificationCompat.BigTextStyle]. Promotion is an enhancement,
+ * not a requirement: when the user has disabled live updates in settings the
+ * same notification still posts as a regular ongoing one.
  */
 object LiveNoteNotifications {
     const val CHANNEL_ID = "live_note"
@@ -26,19 +35,44 @@ object LiveNoteNotifications {
     /** Notification id of the live-note foreground notification. */
     const val NOTIFICATION_ID = 1001
 
-    /** Creates the low-importance channel the live note posts on. */
+    /**
+     * Creates the channel the live note posts on. Default importance is
+     * required for promoted-ongoing (Live Update) eligibility.
+     */
     fun createChannel(context: Context) {
         val channel =
             NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.live_notification_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = context.getString(R.string.live_notification_channel_description)
                 setShowBadge(false)
             }
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
+
+    /**
+     * True on API 36+ when the user has not disabled live updates for the app
+     * in settings; false on older platforms.
+     */
+    fun canPostPromoted(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return false
+        return context.getSystemService(NotificationManager::class.java).canPostPromotedNotifications()
+    }
+
+    /**
+     * Intent that deep-links the user to the live-updates setting for this app
+     * on API 36+, or null on older platforms.
+     */
+    fun promotionSettingsIntent(context: Context): Intent? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
+        } else {
+            null
+        }
 
     /** Builds the live-note notification for [noteText]. */
     fun build(
@@ -61,23 +95,33 @@ object LiveNoteNotifications {
                 Intent(context, LiveNoteService::class.java).setAction(LiveNoteService.ACTION_STOP),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
-        return NotificationCompat
-            .Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle(context.getString(R.string.live_note_title))
-            .setContentText(contentText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
-            .setContentIntent(openApp)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .addAction(0, context.getString(R.string.live_note_stop), stop)
-            .build()
+        val builder =
+            NotificationCompat
+                .Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_monochrome)
+                .setContentTitle(context.getString(R.string.live_note_title))
+                .setContentText(contentText)
+                .setContentIntent(openApp)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .addAction(0, context.getString(R.string.live_note_stop), stop)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            builder
+                .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
+                .setRequestPromotedOngoing(true)
+                .setShortCriticalText(context.getString(R.string.live))
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
+        }
+        return builder.build()
     }
 
     /**
      * Refreshes the live-note notification with [noteText]. A no-op when the
-     * notification permission has been revoked since the note went live.
+     * notification permission has been revoked since the note went live. On
+     * API 36+ logs whether the posted notification actually qualifies for
+     * promotion, purely as a diagnostic.
      */
     fun notify(
         context: Context,
@@ -90,6 +134,12 @@ object LiveNoteNotifications {
         ) {
             return
         }
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, build(context, noteText))
+        val notification = build(context, noteText)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            Timber.d(
+                "Live note notification promotable: ${notification.hasPromotableCharacteristics()}",
+            )
+        }
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
     }
 }

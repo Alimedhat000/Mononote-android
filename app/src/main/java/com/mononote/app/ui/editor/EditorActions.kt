@@ -30,7 +30,9 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,9 +50,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.mononote.app.R
+import com.mononote.app.notification.LiveNoteNotifications
 import com.mononote.app.notification.LiveNoteService
 import com.mononote.app.ui.theme.LocalMononoteColors
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import com.composables.icons.lucide.R as LucideR
 
 /** Full-width pill that only dismisses the keyboard; it never saves. */
@@ -165,6 +169,12 @@ internal fun AnimatedEditorActions(
  * fills while the live-note service is running, and the label switches from
  * "Go live" to "Live". Requests the notification permission when needed
  * before starting; a denial surfaces a snackbar.
+ *
+ * Going live always starts [LiveNoteService], so the ongoing notification
+ * works regardless of live-update support. On API 36+ the notification also
+ * requests promotion to a Live Update; when the user has disabled live updates
+ * in settings, the service still starts and a snackbar offers a Settings
+ * action to re-enable them.
  */
 @Composable
 internal fun GoLiveButton(
@@ -176,10 +186,38 @@ internal fun GoLiveButton(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val permissionNeeded = stringResource(R.string.notification_permission_needed)
+    val liveUpdatesOff = stringResource(R.string.live_updates_off_message)
+    val enableLiveUpdates = stringResource(R.string.live_updates_enable)
+
+    fun startLive() {
+        context.startForegroundService(Intent(context, LiveNoteService::class.java))
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
+            !LiveNoteNotifications.canPostPromoted(context)
+        ) {
+            scope.launch {
+                if (
+                    snackbarHostState.showSnackbar(
+                        message = liveUpdatesOff,
+                        actionLabel = enableLiveUpdates,
+                        duration = SnackbarDuration.Indefinite,
+                    ) == SnackbarResult.ActionPerformed
+                ) {
+                    LiveNoteNotifications.promotionSettingsIntent(context)?.let { intent ->
+                        runCatching { context.startActivity(intent) }
+                            .onFailure {
+                                Timber.d("No live-update settings handler: ${it.message}")
+                            }
+                    }
+                }
+            }
+        }
+    }
+
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
-                context.startForegroundService(Intent(context, LiveNoteService::class.java))
+                startLive()
             } else {
                 scope.launch { snackbarHostState.showSnackbar(permissionNeeded) }
             }
@@ -190,18 +228,16 @@ internal fun GoLiveButton(
                 .height(48.dp)
                 .clip(CircleShape)
                 .clickable {
-                    if (isLive) {
-                        context.stopService(Intent(context, LiveNoteService::class.java))
-                    } else if (
+                    when {
+                        isLive ->
+                            context.stopService(Intent(context, LiveNoteService::class.java))
                         Build.VERSION.SDK_INT >= 33 &&
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS,
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    } else {
-                        context.startForegroundService(Intent(context, LiveNoteService::class.java))
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS,
+                            ) != PackageManager.PERMISSION_GRANTED ->
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        else -> startLive()
                     }
                 },
         shape = CircleShape,

@@ -19,6 +19,8 @@
     <string name="go_live">Go Live</string>
     <string name="live">Live</string>
     <string name="notification_permission_needed">Enable notifications to go live</string>
+    <string name="live_updates_off_message">Live updates are off</string>
+    <string name="live_updates_enable">Settings</string>
     <string name="live_note_title">Live note</string>
     <string name="live_note_stop">Stop</string>
     <string name="live_notification_channel_name">Live note</string>
