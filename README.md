@@ -8,6 +8,8 @@ Inspired by [Mononote](https://www.digitalminimalist.com/blog/introducing-monono
 
 - **One note at a time** — no lists, no folders, no clutter
 - **Autosaves as you type** — no save button, just a subtle saving indicator
+- **Done pill while editing** — dismisses the keyboard; a go-live action bar appears when you're done: view archived notes, go live, delete
+- **Go live** — keep your current note as a persistent live notification that stays in sync as you type
 - **Archive** (recoverable) or **delete** (permanent) when you're done
 - **Restore** any archived note whenever you need it
 - **Home screen widget** showing your active note
@@ -56,7 +58,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - [x] Phase 1 — Scaffold: Gradle, manifest, theme tokens, navigation shell
 - [x] Phase 2 — Data layer: Room entity/DAO/DB, repository with single-note invariant
-- [ ] Phase 3 — Editor screen: autosave, status indicator, overflow menu, archive/delete
+- [x] Phase 3 — Editor screen: autosave, status ring, overflow menu, archive/delete, go-live live notification
 - [ ] Phase 4 — Archive screen: list, restore, permanent delete
 - [ ] Phase 5 — Home screen widget (Glance)
 - [ ] Phase 6 — Polish: edge cases, final QA

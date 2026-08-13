@@ -25,21 +25,22 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 
 - Exactly one active note (`archivedAt == null`) at any time; invariant enforced in the repository.
 - Autosave is debounced (~500ms). The repository's save must write Room AND the widget DataStore snapshot in **one suspend function** — never two fire-and-forget calls (avoids stale widget text).
-- Process death mid-typing: retain in-progress text via `rememberSaveable`/`SavedStateHandle`; flush an immediate, non-debounced save in `onPause`/`onStop`.
-- The "Done" button ONLY dismisses the keyboard — it never saves, archives, or deletes.
+- Process death mid-typing: `SavedStateHandle` retains the in-progress draft (key `editor_draft`; a restored non-blank draft wins over the older persisted text on relaunch), and `onPause`/`onStop` flush an immediate, non-debounced save.
+- The "Done" pill shows only while the text field is focused and ONLY dismisses the keyboard — it never saves, archives, or deletes. Otherwise the editor shows a go-live action bar (view archived notes, go live, delete, left to right).
 - Archive = set `archivedAt` (reversible, no confirmation). Delete = hard row delete (permanent; confirm dialog first). Overflow menu hides both when the active note is blank.
 - Restore: empty active note → swap restored note in; non-empty → confirm, archive current first, then restore.
-- Persistent notification (the iOS Live Activity equivalent) is explicitly cut from v1 — future phase only.
+- Go live: a persistent live notification of the note (the iOS Live Activity equivalent), now a v1 feature. It is a `specialUse` foreground service (`LiveNoteService`) that observes the active note and keeps the notification in sync. Requires explicit `POST_NOTIFICATIONS` + `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` manifest permissions and a runtime notification-permission request (API 33+) before starting.
 - No network permission in the manifest (acceptance requirement). Transitive `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` come from WorkManager/Glance — expected, do not remove.
 
 ## Current state & architecture
 
-- Phase 1 (scaffold) done. Phases 2–6 pending: data layer (Room/DataStore/repository), editor screen, archive screen, Glance widget, polish.
+- Phases 1–3 done (scaffold, data layer, editor screen). Phase 4 (archive screen), Phase 5 (Glance widget), Phase 6 (polish) pending.
 - Dev tooling wired (Phase 1.5): ktlint + detekt + compose-rules, Lefthook hooks, GitHub Actions CI, Renovate, Timber, LeakCanary (debug), JUnit 5 + Turbine + MockK unit tests, Compose UI test scaffold. Unit tests live in `src/test` (JUnit 5), instrumented in `src/androidTest` (JUnit 4).
-- `data/` (Note entity, DAO, Room DB, repository) and `widget/` do NOT exist yet — their deps are already in the version catalog.
-- `ui/editor/EditorScreen.kt` and `ui/archive/ArchiveScreen.kt` are placeholder stubs awaiting Phases 3/4.
+- `data/` holds the Note entity, DAO, Room DB, `SettingsDataStore` (widget snapshot), and `NotesRepository` (single-note invariant).
+- `notification/` holds the go-live feature: `LiveNoteService` (specialUse foreground service), `LiveNoteNotifications`, and `LiveNoteController` (app-scoped `isLive` state).
+- `ui/editor/` holds the real editor screen + ViewModel. `ui/archive/ArchiveScreen.kt` is still a placeholder stub awaiting Phase 4.
 - Design tokens: `ui/theme/Color.kt` defines `MononoteColors` + `LocalMononoteColors` (CompositionLocal). Use these, not stock Material 3 defaults. Secondary text is `#9A9A9E` in BOTH light and dark. `MononoteTheme` (Theme.kt) follows the system theme.
-- Routes: `editor` (start) and `archive` in `navigation/MononoteNavHost.kt`.
+- Routes: `editor` (start) and `archive` in `navigation/MononoteNavHost.kt`; the editor's overflow menu and go-live bar navigate to `archive`.
 
 ## Git
 
