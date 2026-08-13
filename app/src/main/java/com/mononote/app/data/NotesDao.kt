@@ -31,6 +31,10 @@ interface NotesDao {
     @Query("SELECT * FROM notes WHERE archivedAt IS NOT NULL ORDER BY archivedAt DESC")
     suspend fun getArchivedNotes(): List<Note>
 
+    /** Emits all archived notes, newest archived first, on every change. */
+    @Query("SELECT * FROM notes WHERE archivedAt IS NOT NULL ORDER BY archivedAt DESC")
+    fun observeArchivedNotes(): Flow<List<Note>>
+
     /** Counts active notes; used to assert the single-active-note invariant. */
     @Query("SELECT COUNT(*) FROM notes WHERE archivedAt IS NULL")
     suspend fun countActiveNotes(): Int

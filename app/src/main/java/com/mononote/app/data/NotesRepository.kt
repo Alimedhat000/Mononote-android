@@ -74,6 +74,18 @@ class NotesRepository(
     /** Returns all archived notes, newest archived first. */
     suspend fun getArchivedNotes(): List<Note> = dao.getArchivedNotes()
 
+    /** Emits all archived notes, newest archived first, on every change. */
+    fun observeArchivedNotes(): Flow<List<Note>> = dao.observeArchivedNotes()
+
+    /**
+     * Permanently deletes the archived note with [id]. Unlike the active-note
+     * deletes, the widget snapshot is left untouched: it mirrors only the
+     * active note, so removing an archived row must not blank it.
+     */
+    suspend fun deleteArchivedNote(id: Long) {
+        dao.deleteById(id)
+    }
+
     /**
      * Restores [noteId] as the active note, returning true on success.
      *

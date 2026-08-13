@@ -2,7 +2,10 @@ package com.mononote.app.data
 
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -159,6 +162,28 @@ class NotesRepositoryTest {
             coVerify(exactly = 0) { dao.setArchivedAt(any(), any()) }
             coVerify(exactly = 0) { dao.deleteActiveThenRestore(any(), any()) }
             coVerify(exactly = 0) { dao.archiveActiveThenRestore(any(), any(), any()) }
+            coVerify(exactly = 0) { settings.saveActiveNoteSnapshot(any()) }
+        }
+
+    @Test
+    fun `observeArchivedNotes delegates to the DAO flow`() =
+        runTest {
+            val archived =
+                listOf(
+                    Note(id = 1, text = "old", createdAt = 10, updatedAt = 11, archivedAt = 100),
+                    Note(id = 2, text = "older", createdAt = 9, updatedAt = 10, archivedAt = 200),
+                )
+            every { dao.observeArchivedNotes() } returns flowOf(archived)
+
+            assertEquals(archived, repository.observeArchivedNotes().first())
+        }
+
+    @Test
+    fun `deleteArchivedNote deletes the row without touching the widget snapshot`() =
+        runTest {
+            repository.deleteArchivedNote(9)
+
+            coVerify { dao.deleteById(9) }
             coVerify(exactly = 0) { settings.saveActiveNoteSnapshot(any()) }
         }
 }
