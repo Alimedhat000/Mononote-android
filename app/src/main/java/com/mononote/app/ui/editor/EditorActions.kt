@@ -6,6 +6,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -105,6 +112,48 @@ internal fun NoteActionsBar(
                 containerColor = colors.menuButtonFill,
                 contentColor = colors.menuButtonIcon,
                 onClick = onDelete,
+            )
+        }
+    }
+}
+
+/** Presentation state for the animated editor bottom bar. */
+internal data class EditorBottomBarState(
+    val isEditing: Boolean,
+    val isLive: Boolean,
+    val canArchiveOrDelete: Boolean,
+)
+
+/**
+ * Crossfades between the Done pill (while the field is focused) and the
+ * go-live action bar, with a soft vertical drift and an animated container
+ * height so dismissing the keyboard reads as one continuous motion.
+ */
+@Composable
+internal fun AnimatedEditorActions(
+    state: EditorBottomBarState,
+    onOpenArchive: () -> Unit,
+    onDelete: () -> Unit,
+    onDone: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+) {
+    AnimatedContent(
+        targetState = state.isEditing,
+        transitionSpec = {
+            (fadeIn(tween(160)) + slideInVertically(tween(160)) { it / 4 })
+                .togetherWith(fadeOut(tween(100)) + slideOutVertically(tween(100)) { it / 4 })
+        },
+        label = "editorActions",
+    ) { editing ->
+        if (editing) {
+            DoneButton(onClick = onDone)
+        } else {
+            NoteActionsBar(
+                isLive = state.isLive,
+                canArchiveOrDelete = state.canArchiveOrDelete,
+                onOpenArchive = onOpenArchive,
+                onDelete = onDelete,
+                snackbarHostState = snackbarHostState,
             )
         }
     }

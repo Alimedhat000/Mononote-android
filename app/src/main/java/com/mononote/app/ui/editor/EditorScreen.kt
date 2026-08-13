@@ -117,20 +117,21 @@ fun EditorScreen(
             modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.height(16.dp))
-        if (isEditing) {
-            DoneButton(onClick = {
+        AnimatedEditorActions(
+            state =
+                EditorBottomBarState(
+                    isEditing = isEditing,
+                    isLive = isLive,
+                    canArchiveOrDelete = canArchiveOrDelete,
+                ),
+            onOpenArchive = onOpenArchive,
+            onDelete = { showDeleteDialog = true },
+            onDone = {
                 keyboardController?.hide()
                 focusManager.clearFocus()
-            })
-        } else {
-            NoteActionsBar(
-                isLive = isLive,
-                canArchiveOrDelete = canArchiveOrDelete,
-                onOpenArchive = onOpenArchive,
-                onDelete = { showDeleteDialog = true },
-                snackbarHostState = snackbarHostState,
-            )
-        }
+            },
+            snackbarHostState = snackbarHostState,
+        )
         SnackbarHost(snackbarHostState)
     }
 
