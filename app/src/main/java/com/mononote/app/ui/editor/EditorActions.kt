@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -32,8 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,9 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.mononote.app.R
 import com.mononote.app.notification.LiveNoteService
-import com.mononote.app.ui.icons.LucideArchiveIcon
 import com.mononote.app.ui.theme.LocalMononoteColors
 import kotlinx.coroutines.launch
+import com.composables.icons.lucide.R as LucideR
 
 /** Full-width pill that only dismisses the keyboard; it never saves. */
 @Composable
@@ -90,7 +89,7 @@ internal fun NoteActionsBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ActionCircleButton(
-            icon = LucideArchiveIcon,
+            icon = painterResource(LucideR.drawable.lucide_ic_archive),
             contentDescription = stringResource(R.string.archived_notes),
             containerColor = colors.menuButtonFill,
             contentColor = colors.menuButtonIcon,
@@ -99,7 +98,7 @@ internal fun NoteActionsBar(
         if (canArchiveOrDelete) {
             GoLiveButton(isLive = isLive, snackbarHostState = snackbarHostState)
             ActionCircleButton(
-                icon = Icons.Filled.Delete,
+                icon = painterResource(LucideR.drawable.lucide_ic_trash),
                 contentDescription = stringResource(R.string.delete_note),
                 containerColor = colors.menuButtonFill,
                 contentColor = colors.menuButtonIcon,
@@ -171,7 +170,7 @@ internal fun GoLiveButton(
 /** Circular icon button, the shared visual for the go-live action bar. */
 @Composable
 internal fun ActionCircleButton(
-    icon: ImageVector,
+    icon: Painter,
     contentDescription: String,
     containerColor: Color,
     contentColor: Color,
@@ -187,6 +186,6 @@ internal fun ActionCircleButton(
                 contentColor = contentColor,
             ),
     ) {
-        Icon(imageVector = icon, contentDescription = contentDescription)
+        Icon(painter = icon, contentDescription = contentDescription)
     }
 }
