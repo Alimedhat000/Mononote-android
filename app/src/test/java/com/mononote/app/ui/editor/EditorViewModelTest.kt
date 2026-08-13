@@ -1,5 +1,6 @@
 package com.mononote.app.ui.editor
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.mononote.app.data.Note
 import com.mononote.app.data.NotesRepository
@@ -53,7 +54,7 @@ class EditorViewModelTest {
         activeNote: Note?,
     ): EditorViewModel {
         every { repository.observeActiveNote() } returns MutableStateFlow(activeNote)
-        return EditorViewModel(repository)
+        return EditorViewModel(repository, SavedStateHandle())
     }
 
     @Test
@@ -351,7 +352,7 @@ class EditorViewModelTest {
                 testScheduler.runCurrent()
                 notes.value = note("hi", id = 1)
             }
-            val vm = EditorViewModel(repository)
+            val vm = EditorViewModel(repository, SavedStateHandle())
             runCurrent()
 
             vm.updateText("hi")
@@ -368,13 +369,57 @@ class EditorViewModelTest {
             coEvery { repository.saveActiveNote(any()) } just runs
             val notes = MutableStateFlow(note("old", id = 1))
             every { repository.observeActiveNote() } returns notes
-            val vm = EditorViewModel(repository)
+            val vm = EditorViewModel(repository, SavedStateHandle())
             runCurrent()
 
             notes.value = note("new", id = 2)
             runCurrent()
 
             assertEquals("new", vm.text.value)
+        }
+
+    @Test
+    fun `updateText writes the draft to the saved state handle`() =
+        runEditorTest {
+            val repository = mockk<NotesRepository>(relaxed = true)
+            coEvery { repository.saveActiveNote(any()) } just runs
+            val savedStateHandle = SavedStateHandle()
+            val vm = EditorViewModel(repository, savedStateHandle)
+            runCurrent()
+
+            vm.updateText("typed")
+
+            assertEquals("typed", savedStateHandle[EditorViewModel.DRAFT_KEY])
+        }
+
+    @Test
+    fun `restores a non-blank draft over the older persisted text`() =
+        runEditorTest {
+            val repository = mockk<NotesRepository>(relaxed = true)
+            coEvery { repository.saveActiveNote(any()) } just runs
+            val savedStateHandle = SavedStateHandle()
+            savedStateHandle[EditorViewModel.DRAFT_KEY] = "newer draft"
+            val notes = MutableStateFlow(note("older saved", id = 1))
+            every { repository.observeActiveNote() } returns notes
+            val vm = EditorViewModel(repository, savedStateHandle)
+            runCurrent()
+
+            assertEquals("newer draft", vm.text.value)
+        }
+
+    @Test
+    fun `an empty draft does not block loading persisted text`() =
+        runEditorTest {
+            val repository = mockk<NotesRepository>(relaxed = true)
+            coEvery { repository.saveActiveNote(any()) } just runs
+            val savedStateHandle = SavedStateHandle()
+            savedStateHandle[EditorViewModel.DRAFT_KEY] = ""
+            val notes = MutableStateFlow(note("saved", id = 1))
+            every { repository.observeActiveNote() } returns notes
+            val vm = EditorViewModel(repository, savedStateHandle)
+            runCurrent()
+
+            assertEquals("saved", vm.text.value)
         }
 
     private companion object {

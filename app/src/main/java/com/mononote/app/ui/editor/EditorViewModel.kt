@@ -1,8 +1,12 @@
 package com.mononote.app.ui.editor
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mononote.app.data.Note
 import com.mononote.app.data.NotesRepository
 import com.mononote.app.data.isBlankNote
@@ -58,17 +62,27 @@ enum class EditorUiEvent {
  * to [MAX_NOTE_LENGTH] for the corner ring on the editor card. It does not
  * gate typing, saving, or archive/delete; those stay keyed off blankness only.
  *
+ * In-progress text survives process death through [SavedStateHandle]: every
+ * text change is mirrored to [DRAFT_KEY], and a restored draft takes
+ * precedence over the (older) persisted note text when the note row reloads,
+ * so the last keystrokes can never be clobbered by the previous save.
+ *
  * @param repository Single source of truth for note data.
+ * @param savedStateHandle Retains the in-progress draft across process death.
  */
 @OptIn(FlowPreview::class)
 class EditorViewModel(
     private val repository: NotesRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _text = MutableStateFlow("")
+    private val _text = MutableStateFlow(savedStateHandle[DRAFT_KEY] ?: "")
     private val currentNote = MutableStateFlow<Note?>(null)
     private val _isSaving = MutableStateFlow(false)
     private val _canArchiveOrDelete = MutableStateFlow(false)
     private val _events = MutableSharedFlow<EditorUiEvent>(extraBufferCapacity = 1)
+
+    /** True until the note flow first emits after a process-death restore. */
+    private var restoredDraft = _text.value.isNotBlank()
 
     /** Current editor text, updated immediately on each keystroke. */
     val text: StateFlow<String> = _text.asStateFlow()
@@ -105,10 +119,9 @@ class EditorViewModel(
         }
     }
 
-    /** Records the latest keystroke. Saving happens later, debounced. */
+    /** Records the latest keystroke and mirrors it to the saved state. */
     fun updateText(newText: String) {
-        _text.value = newText
-        refreshCanArchiveOrDelete()
+        setText(newText)
     }
 
     /** Archives the active note (reversible) and surfaces a snackbar. */
@@ -178,7 +191,10 @@ class EditorViewModel(
                     setText("")
                 }
             note.id != previous?.id ->
-                if (note.text != lastSaved) {
+                if (restoredDraft) {
+                    // The draft is newer than the persisted text; keep it.
+                    restoredDraft = false
+                } else if (note.text != lastSaved) {
                     lastSaved = note.text
                     setText(note.text)
                 }
@@ -194,6 +210,7 @@ class EditorViewModel(
 
     private fun setText(text: String) {
         _text.value = text
+        savedStateHandle[DRAFT_KEY] = text
         refreshCanArchiveOrDelete()
     }
 
@@ -211,11 +228,15 @@ class EditorViewModel(
          */
         const val MAX_NOTE_LENGTH = 200
 
+        /** [SavedStateHandle] key holding the in-progress draft. */
+        const val DRAFT_KEY = "editor_draft"
+
         /** [ViewModelProvider.Factory] providing [EditorViewModel] with [repository]. */
         fun factory(repository: NotesRepository): ViewModelProvider.Factory =
-            object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T = EditorViewModel(repository) as T
+            viewModelFactory {
+                initializer {
+                    EditorViewModel(repository, createSavedStateHandle())
+                }
             }
     }
 }
