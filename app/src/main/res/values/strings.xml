@@ -30,4 +30,5 @@
     <string name="live_notification_channel_name">Live note</string>
     <string name="live_notification_channel_description">Shows your current note as a live notification</string>
     <string name="live_service_subtype">Live note updates</string>
+    <string name="mononote_widget_description">Shows your current note</string>
 </resources>

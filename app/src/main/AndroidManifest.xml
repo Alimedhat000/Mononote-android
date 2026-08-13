@@ -36,6 +36,17 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="@string/live_service_subtype" />
         </service>
+
+        <receiver
+            android:name=".widget.MononoteWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mononote_widget_info" />
+        </receiver>
     </application>
 
 </manifest>
