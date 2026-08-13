@@ -105,13 +105,6 @@ object LiveNoteNotifications {
                 Intent(context, MainActivity::class.java),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
-        val stop =
-            PendingIntent.getService(
-                context,
-                1,
-                Intent(context, LiveNoteService::class.java).setAction(LiveNoteService.ACTION_STOP),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-            )
         val builder =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
@@ -122,7 +115,6 @@ object LiveNoteNotifications {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
-                .addAction(0, context.getString(R.string.live_note_stop), stop)
                 .setStyle(bigTextStyle)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             builder
