@@ -11,10 +11,13 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -51,6 +54,10 @@ enum class EditorUiEvent {
  * restore flow. When no active note row exists yet, archive/delete are hidden
  * regardless of typed text: there is nothing to archive or delete.
  *
+ * [characterLimitProgress] is purely visual — it tracks how close [text] is
+ * to [MAX_NOTE_LENGTH] for the corner ring on the editor card. It does not
+ * gate typing, saving, or archive/delete; those stay keyed off blankness only.
+ *
  * @param repository Single source of truth for note data.
  */
 @OptIn(FlowPreview::class)
@@ -71,6 +78,15 @@ class EditorViewModel(
 
     /** Whether Archive/Delete may run: an active note exists and is not blank. */
     val canArchiveOrDelete: StateFlow<Boolean> = _canArchiveOrDelete.asStateFlow()
+
+    /**
+     * How full the character-limit ring should be, in `[0f, 1f]`.
+     * `text.length / MAX_NOTE_LENGTH`, clamped — never exceeds 1f even past the limit.
+     */
+    val characterLimitProgress: StateFlow<Float> =
+        _text
+            .map { (it.length.toFloat() / MAX_NOTE_LENGTH).coerceIn(0f, 1f) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 0f)
 
     /** One-shot snackbar events (archive/delete). */
     val events: SharedFlow<EditorUiEvent> = _events.asSharedFlow()
@@ -188,6 +204,12 @@ class EditorViewModel(
 
     companion object {
         private const val AUTOSAVE_DEBOUNCE_MILLIS = 500L
+
+        /**
+         * Soft character limit driving [characterLimitProgress]'s ring fill.
+         * Purely visual — typing past this is not blocked.
+         */
+        const val MAX_NOTE_LENGTH = 200
 
         /** [ViewModelProvider.Factory] providing [EditorViewModel] with [repository]. */
         fun factory(repository: NotesRepository): ViewModelProvider.Factory =
