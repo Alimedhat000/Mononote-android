@@ -6,9 +6,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -109,10 +111,11 @@ internal fun NoteActionsBar(
 }
 
 /**
- * The go-live toggle: an outlined pill labelled "Go live" that fills and
- * relabels to "Live" while the live-note service is running. Requests the
- * notification permission when needed before starting; a denial surfaces a
- * snackbar.
+ * The go-live toggle: a pill styled like the other action-bar icons, with a
+ * small dot indicator next to the label. The dot is hollow while idle and
+ * fills while the live-note service is running, and the label switches from
+ * "Go live" to "Live". Requests the notification permission when needed
+ * before starting; a denial surfaces a snackbar.
  */
 @Composable
 internal fun GoLiveButton(
@@ -153,13 +156,38 @@ internal fun GoLiveButton(
                     }
                 },
         shape = CircleShape,
-        color = if (isLive) colors.doneButtonFill else Color.Transparent,
-        contentColor = if (isLive) colors.doneButtonText else colors.doneButtonFill,
-        border = BorderStroke(1.dp, colors.doneButtonFill),
+        color = colors.menuButtonFill,
+        contentColor = colors.menuButtonIcon,
     ) {
+        GoLiveLabel(isLive = isLive, color = colors.menuButtonIcon)
+    }
+}
+
+/** The pill's contents: a dot that fills while live, and the label. */
+@Composable
+private fun GoLiveLabel(
+    isLive: Boolean,
+    color: Color,
+) {
+    Row(
+        modifier = Modifier.padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(12.dp)
+                    .then(
+                        if (isLive) {
+                            Modifier.background(color, CircleShape)
+                        } else {
+                            Modifier.border(1.5.dp, color, CircleShape)
+                        },
+                    ),
+        )
         Text(
             text = stringResource(if (isLive) R.string.live else R.string.go_live),
-            modifier = Modifier.padding(horizontal = 28.dp, vertical = 13.dp),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
