@@ -38,7 +38,9 @@ object LiveNoteNotifications {
     /**
      * Title length cap: notes longer than this are split into a truncated
      * title (with an ellipsis) and the remainder as the expanded body, so the
-     * collapsed card never relies on the system's own title truncation.
+     * collapsed card never relies on the system's own title truncation. The
+     * cut prefers the closest space at or before the cap so words are kept
+     * whole; only falls back to a hard cut when the text has no space there.
      */
     private const val MAX_TITLE_CHARS = 49
 
@@ -89,7 +91,13 @@ object LiveNoteNotifications {
         val noteTitle = noteText.ifBlank { context.getString(R.string.placeholder_text) }
         val (titleText, bodyText) =
             if (noteTitle.length > MAX_TITLE_CHARS) {
-                noteTitle.take(MAX_TITLE_CHARS) + "…" to noteTitle.drop(MAX_TITLE_CHARS)
+                val cutIndex = noteTitle.take(MAX_TITLE_CHARS).indexOfLast { it == ' ' }
+                if (cutIndex > 0) {
+                    noteTitle.substring(0, cutIndex).trimEnd() + "…" to
+                        noteTitle.substring(cutIndex).trimStart()
+                } else {
+                    noteTitle.take(MAX_TITLE_CHARS) + "…" to noteTitle.drop(MAX_TITLE_CHARS)
+                }
             } else {
                 noteTitle to ""
             }
