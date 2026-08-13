@@ -6,6 +6,7 @@ import com.mononote.app.data.NotesDatabase
 import com.mononote.app.data.NotesRepository
 import com.mononote.app.data.SettingsDataStore
 import com.mononote.app.data.mononoteDataStore
+import com.mononote.app.notification.LiveNoteController
 import timber.log.Timber
 
 /**
@@ -31,5 +32,10 @@ class MononoteApp : Application() {
             dao = database.notesDao(),
             settingsDataStore = SettingsDataStore(applicationContext.mononoteDataStore),
         )
+    }
+
+    /** App-wide go-live state: whether the live-note service is running. */
+    val liveNoteController: LiveNoteController by lazy {
+        LiveNoteController()
     }
 }

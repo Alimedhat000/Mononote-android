@@ -16,4 +16,12 @@
     <string name="restore">Restore</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="go_live">Go live</string>
+    <string name="live">Live</string>
+    <string name="notification_permission_needed">Enable notifications to go live</string>
+    <string name="live_note_title">Live note</string>
+    <string name="live_note_stop">Stop</string>
+    <string name="live_notification_channel_name">Live note</string>
+    <string name="live_notification_channel_description">Shows your current note as a live notification</string>
+    <string name="live_service_subtype">Live note updates</string>
 </resources>
