@@ -34,11 +34,11 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 
 ## Current state & architecture
 
-- Phases 1–3 done (scaffold, data layer, editor screen). Phase 4 (archive screen), Phase 5 (Glance widget), Phase 6 (polish) pending.
+- Phases 1–4 done (scaffold, data layer, editor screen, archive screen). Phase 5 (Glance widget), Phase 6 (polish) pending.
 - Dev tooling wired (Phase 1.5): ktlint + detekt + compose-rules, Lefthook hooks, GitHub Actions CI, Renovate, Timber, LeakCanary (debug), JUnit 5 + Turbine + MockK unit tests, Compose UI test scaffold. Unit tests live in `src/test` (JUnit 5), instrumented in `src/androidTest` (JUnit 4).
 - `data/` holds the Note entity, DAO, Room DB, `SettingsDataStore` (widget snapshot), and `NotesRepository` (single-note invariant).
 - `notification/` holds the go-live feature: `LiveNoteService` (specialUse foreground service), `LiveNoteNotifications`, and `LiveNoteController` (app-scoped `isLive` state).
-- `ui/editor/` holds the real editor screen + ViewModel. `ui/archive/ArchiveScreen.kt` is still a placeholder stub awaiting Phase 4.
+- `ui/editor/` holds the real editor screen + ViewModel. `ui/archive/` holds the archive screen + ViewModel (archived list with per-row restore/delete, both confirmation-gated).
 - Design tokens: `ui/theme/Color.kt` defines `MononoteColors` + `LocalMononoteColors` (CompositionLocal). Use these, not stock Material 3 defaults. Secondary text is `#9A9A9E` in BOTH light and dark. `MononoteTheme` (Theme.kt) follows the system theme.
 - Routes: `editor` (start) and `archive` in `navigation/MononoteNavHost.kt`; the editor's overflow menu and go-live bar navigate to `archive`.
 
