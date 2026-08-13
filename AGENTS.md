@@ -26,7 +26,7 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 - Exactly one active note (`archivedAt == null`) at any time; invariant enforced in the repository.
 - Autosave is debounced (~500ms). The repository's save must write Room AND the widget DataStore snapshot in **one suspend function** — never two fire-and-forget calls (avoids stale widget text).
 - Process death mid-typing: `SavedStateHandle` retains the in-progress draft (key `editor_draft`; a restored non-blank draft wins over the older persisted text on relaunch), and `onPause`/`onStop` flush an immediate, non-debounced save.
-- The "Done" pill shows only while the text field is focused and ONLY dismisses the keyboard — it never saves, archives, or deletes. Otherwise the editor shows a go-live action bar (archive the current note, go live, delete, left to right); the archived-notes list is reached from the overflow menu ("View archived notes").
+- The "Done" pill shows only while the text field is focused and ONLY dismisses the keyboard — it never saves, archives, or deletes. Otherwise the editor shows a go-live action bar (archive the current note, go live, delete, left to right). The overflow menu holds exactly two items: Archived Notes and Settings; Settings is a placeholder entry for a later phase (dark/light mode, font, widget & live-notification settings, feedback, about).
 - Archive = set `archivedAt` (reversible, no confirmation). Delete = hard row delete (permanent; confirm dialog first). Overflow menu hides both when the active note is blank.
 - Restore: empty active note → swap restored note in; non-empty → confirm, archive current first, then restore.
 - Go live: a persistent live notification of the note (the iOS Live Activity equivalent), now a v1 feature. It is a `specialUse` foreground service (`LiveNoteService`) that observes the active note and keeps the notification in sync. Requires explicit `POST_NOTIFICATIONS` + `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` manifest permissions and a runtime notification-permission request (API 33+) before starting.
@@ -40,7 +40,7 @@ Versions are pinned in `gradle/libs.versions.toml` (single source of truth): AGP
 - `notification/` holds the go-live feature: `LiveNoteService` (specialUse foreground service), `LiveNoteNotifications`, and `LiveNoteController` (app-scoped `isLive` state).
 - `ui/editor/` holds the real editor screen + ViewModel. `ui/archive/` holds the archive screen + ViewModel (archived list with per-row restore/delete, both confirmation-gated).
 - Design tokens: `ui/theme/Color.kt` defines `MononoteColors` + `LocalMononoteColors` (CompositionLocal). Use these, not stock Material 3 defaults. Secondary text is `#9A9A9E` in BOTH light and dark. `MononoteTheme` (Theme.kt) follows the system theme.
-- Routes: `editor` (start) and `archive` in `navigation/MononoteNavHost.kt`; the editor's overflow menu and go-live bar navigate to `archive`.
+- Routes: `editor` (start) and `archive` in `navigation/MononoteNavHost.kt`; the editor's overflow menu navigates to `archive` (the go-live bar archives the current note instead).
 
 ## Git
 

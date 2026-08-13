@@ -62,6 +62,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - [x] Phase 4 — Archive screen: list, restore, permanent delete
 - [ ] Phase 5 — Home screen widget (Glance)
 - [ ] Phase 6 — Polish: edge cases, final QA
+- [ ] Phase 7 — Settings screen: dark/light mode, font, widget & live-notification settings, feedback and about
 
 ## License
 
