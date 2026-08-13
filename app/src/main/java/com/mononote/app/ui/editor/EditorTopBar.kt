@@ -91,6 +91,8 @@ private fun OverflowMenu(onOpenArchive: () -> Unit) {
         DropdownMenu(
             expanded = menuExpanded,
             onDismissRequest = { menuExpanded = false },
+            shape = MaterialTheme.shapes.medium,
+            containerColor = colors.cardSurface,
         ) {
             DropdownMenuItem(
                 leadingIcon = {
