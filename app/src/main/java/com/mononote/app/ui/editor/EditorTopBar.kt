@@ -32,9 +32,8 @@ import com.mononote.app.ui.theme.LocalMononoteColors
 @Composable
 fun EditorTopBar(
     canArchiveOrDelete: Boolean,
-    onArchive: () -> Unit,
-    onDelete: () -> Unit,
     onOpenArchive: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
@@ -49,24 +48,23 @@ fun EditorTopBar(
         Box(modifier = Modifier.align(Alignment.CenterEnd)) {
             OverflowMenu(
                 canArchiveOrDelete = canArchiveOrDelete,
-                onArchive = onArchive,
-                onDelete = onDelete,
                 onOpenArchive = onOpenArchive,
+                onDelete = onDelete,
             )
         }
     }
 }
 
 /**
- * The overflow menu. Archive note and Delete note are hidden while the note is
- * blank; View archived notes is always available.
+ * The overflow menu. Delete note is hidden while the note is blank; View
+ * archived notes is always available. The bottom action bar archives the
+ * current note, so the menu only reaches the archived-notes list.
  */
 @Composable
 private fun OverflowMenu(
     canArchiveOrDelete: Boolean,
-    onArchive: () -> Unit,
-    onDelete: () -> Unit,
     onOpenArchive: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val colors = LocalMononoteColors.current
     val moreOptions = stringResource(R.string.more_options)
@@ -101,13 +99,6 @@ private fun OverflowMenu(
             onDismissRequest = { menuExpanded = false },
         ) {
             if (canArchiveOrDelete) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.archive_note)) },
-                    onClick = {
-                        menuExpanded = false
-                        onArchive()
-                    },
-                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.delete_note)) },
                     onClick = {

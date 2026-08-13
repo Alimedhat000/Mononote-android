@@ -84,14 +84,15 @@ internal fun DoneButton(
 
 /**
  * The go-live action bar shown instead of the Done pill while the note is not
- * being edited: view archived notes, go live, and delete, left to right. Go
- * live and delete are hidden while the note is blank.
+ * being edited: archive the current note, go live, and delete, left to right.
+ * All three are hidden while the note is blank. The archived-notes list is
+ * reached from the overflow menu instead.
  */
 @Composable
 internal fun NoteActionsBar(
     isLive: Boolean,
     canArchiveOrDelete: Boolean,
-    onOpenArchive: () -> Unit,
+    onArchive: () -> Unit,
     onDelete: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
@@ -101,14 +102,14 @@ internal fun NoteActionsBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ActionCircleButton(
-            icon = painterResource(LucideR.drawable.lucide_ic_archive),
-            contentDescription = stringResource(R.string.archived_notes),
-            containerColor = colors.menuButtonFill,
-            contentColor = colors.menuButtonIcon,
-            onClick = onOpenArchive,
-        )
         if (canArchiveOrDelete) {
+            ActionCircleButton(
+                icon = painterResource(LucideR.drawable.lucide_ic_archive),
+                contentDescription = stringResource(R.string.archive_note),
+                containerColor = colors.menuButtonFill,
+                contentColor = colors.menuButtonIcon,
+                onClick = onArchive,
+            )
             GoLiveButton(isLive = isLive, snackbarHostState = snackbarHostState)
             ActionCircleButton(
                 icon = painterResource(LucideR.drawable.lucide_ic_trash),
@@ -136,7 +137,7 @@ internal data class EditorBottomBarState(
 @Composable
 internal fun AnimatedEditorActions(
     state: EditorBottomBarState,
-    onOpenArchive: () -> Unit,
+    onArchive: () -> Unit,
     onDelete: () -> Unit,
     onDone: () -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -155,7 +156,7 @@ internal fun AnimatedEditorActions(
             NoteActionsBar(
                 isLive = state.isLive,
                 canArchiveOrDelete = state.canArchiveOrDelete,
-                onOpenArchive = onOpenArchive,
+                onArchive = onArchive,
                 onDelete = onDelete,
                 snackbarHostState = snackbarHostState,
             )

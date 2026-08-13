@@ -55,11 +55,11 @@ class EditorScreenTest {
     }
 
     @Test
-    fun hidesGoLiveAndDeleteWhenNoteBlank() {
+    fun hidesGoLiveArchiveAndDeleteWhenNoteBlank() {
         setEditorContent()
         composeRule.onNodeWithContentDescription("Go live").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Archive note").assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Delete note").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("Archived Notes").assertIsDisplayed()
     }
 
     @Test
@@ -83,12 +83,12 @@ class EditorScreenTest {
     }
 
     @Test
-    fun showsGoLiveAndDeleteWhenNoteNotEmpty() {
+    fun showsGoLiveArchiveAndDeleteWhenNoteNotEmpty() {
         runBlocking { app.repository.saveActiveNote("hello world") }
         setEditorContent()
         composeRule.onNodeWithContentDescription("Go live").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Archive note").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Delete note").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Archived Notes").assertIsDisplayed()
     }
 
     @Test
@@ -102,20 +102,18 @@ class EditorScreenTest {
     }
 
     @Test
-    fun overflowMenuOffersArchiveAndDeleteWhenNotEmpty() {
+    fun overflowMenuOffersDeleteAndArchivedNotesWhenNotEmpty() {
         runBlocking { app.repository.saveActiveNote("hello world") }
         setEditorContent()
         composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Archive note").assertIsDisplayed()
         composeRule.onNodeWithText("Delete note").assertIsDisplayed()
         composeRule.onNodeWithText("View archived notes").assertIsDisplayed()
     }
 
     @Test
-    fun overflowMenuHidesArchiveAndDeleteWhenBlank() {
+    fun overflowMenuHidesDeleteWhenBlank() {
         setEditorContent()
         composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Archive note").assertDoesNotExist()
         composeRule.onNodeWithText("Delete note").assertDoesNotExist()
         composeRule.onNodeWithText("View archived notes").assertIsDisplayed()
     }
