@@ -32,6 +32,7 @@ fun MononoteNavHost(navController: NavHostController = rememberNavController()) 
         }
         composable(MononoteRoutes.ARCHIVE) {
             ArchiveScreen(
+                repository = app.repository,
                 onBack = { navController.popBackStack() },
             )
         }
