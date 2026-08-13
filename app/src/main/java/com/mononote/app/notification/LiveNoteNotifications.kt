@@ -18,22 +18,29 @@ import com.mononote.app.R
 import timber.log.Timber
 
 /**
- * Builds and posts the live-note notification: the note's current text shown
- * as a persistent, non-dismissable notification that opens the editor on tap
- * and offers a Stop action.
+ * Builds and posts the live-note notification: a persistent, non-dismissable
+ * notification that shows the note's current text as its title, opens the
+ * editor on tap, and offers a Stop action.
  *
  * On API 36+ the notification requests promotion to a Live Update (status-bar
- * chip, expanded on the lock screen) using an eligible [ProgressStyle] with
- * `setRequestPromotedOngoing`; on older platforms it falls back to the classic
- * expandable [NotificationCompat.BigTextStyle]. Promotion is an enhancement,
- * not a requirement: when the user has disabled live updates in settings the
- * same notification still posts as a regular ongoing one.
+ * chip, expanded on the lock screen) using an eligible BigTextStyle with
+ * `setRequestPromotedOngoing`; on older platforms it posts the same expandable
+ * BigTextStyle without the promotion request. Promotion is an enhancement, not
+ * a requirement: when the user has disabled live updates in settings the same
+ * notification still posts as a regular ongoing one.
  */
 object LiveNoteNotifications {
     const val CHANNEL_ID = "live_note"
 
     /** Notification id of the live-note foreground notification. */
     const val NOTIFICATION_ID = 1001
+
+    /**
+     * Title length cap: notes longer than this are split into a truncated
+     * title (with an ellipsis) and the remainder as the expanded body, so the
+     * collapsed card never relies on the system's own title truncation.
+     */
+    private const val MAX_TITLE_CHARS = 49
 
     /**
      * Creates the channel the live note posts on. Default importance is
@@ -79,8 +86,18 @@ object LiveNoteNotifications {
         context: Context,
         noteText: String,
     ): Notification {
-        val contentText =
-            noteText.ifBlank { context.getString(R.string.placeholder_text) }
+        val noteTitle = noteText.ifBlank { context.getString(R.string.placeholder_text) }
+        val (titleText, bodyText) =
+            if (noteTitle.length > MAX_TITLE_CHARS) {
+                noteTitle.take(MAX_TITLE_CHARS) + "…" to noteTitle.drop(MAX_TITLE_CHARS)
+            } else {
+                noteTitle to ""
+            }
+        val bigTextStyle =
+            NotificationCompat
+                .BigTextStyle()
+                .setBigContentTitle(titleText)
+                .bigText(bodyText)
         val openApp =
             PendingIntent.getActivity(
                 context,
@@ -99,20 +116,18 @@ object LiveNoteNotifications {
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_monochrome)
-                .setContentTitle(context.getString(R.string.live_note_title))
-                .setContentText(contentText)
+                .setContentTitle(titleText)
+                .setContentText(null)
                 .setContentIntent(openApp)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .addAction(0, context.getString(R.string.live_note_stop), stop)
+                .setStyle(bigTextStyle)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             builder
-                .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
                 .setRequestPromotedOngoing(true)
                 .setShortCriticalText(context.getString(R.string.live))
-        } else {
-            builder.setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
         }
         return builder.build()
     }
