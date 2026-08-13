@@ -13,8 +13,8 @@ import com.mononote.app.ui.editor.EditorScreen
 /**
  * Sets up the app's navigation graph: the [MononoteRoutes.EDITOR] screen as
  * the start destination and the [MononoteRoutes.ARCHIVE] archive-list
- * destination. The editor's overflow menu is wired to the archive route in
- * Phase 3.
+ * destination. The editor's overflow menu and go-live action bar are wired to
+ * the archive route and the live-note controller.
  */
 @Composable
 fun MononoteNavHost(navController: NavHostController = rememberNavController()) {
@@ -24,7 +24,11 @@ fun MononoteNavHost(navController: NavHostController = rememberNavController()) 
         startDestination = MononoteRoutes.EDITOR,
     ) {
         composable(MononoteRoutes.EDITOR) {
-            EditorScreen(repository = app.repository)
+            EditorScreen(
+                repository = app.repository,
+                onOpenArchive = { navController.navigate(MononoteRoutes.ARCHIVE) },
+                liveNoteController = app.liveNoteController,
+            )
         }
         composable(MononoteRoutes.ARCHIVE) {
             ArchiveScreen(

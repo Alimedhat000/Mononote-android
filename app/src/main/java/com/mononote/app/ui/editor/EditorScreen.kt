@@ -1,45 +1,49 @@
 package com.mononote.app.ui.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -48,113 +52,200 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mononote.app.R
 import com.mononote.app.data.NotesRepository
+import com.mononote.app.notification.LiveNoteController
 import com.mononote.app.ui.theme.LocalMononoteColors
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * The editor screen: the app's single note, autosaved as you type.
  *
- * Layout, top to bottom: a top bar with the app title and an overflow-menu
- * button, a rounded card holding the note text field with a character-limit
- * progress ring at its bottom-right corner, and a full-width Done pill that
- * only dismisses the keyboard. The overflow menu, archive/delete dialogs,
- * snackbars, and the archive navigation arrive in a later task.
+ * A top bar with the app title and an overflow menu sits above a rounded card
+ * with the note text field and a character-limit ring. The bottom area shows
+ * the full-width Done pill while the field is focused, and otherwise the
+ * go-live action bar: view archived notes, go live (a persistent live
+ * notification of the note), and delete. Archive and delete surface a snackbar
+ * and delete asks for confirmation first.
  *
  * @param repository Single source of truth for note data; injects the
  *   [EditorViewModel].
+ * @param onOpenArchive Navigates to the archived-notes screen.
+ * @param liveNoteController Mirrors whether the live-note service is running.
  * @param modifier Modifier for the root column.
  */
 @Composable
 fun EditorScreen(
     repository: NotesRepository,
+    onOpenArchive: () -> Unit,
+    liveNoteController: LiveNoteController,
     modifier: Modifier = Modifier,
     viewModel: EditorViewModel = viewModel(factory = EditorViewModel.factory(repository)),
 ) {
     val text by viewModel.text.collectAsStateWithLifecycle()
     val characterLimitProgress by viewModel.characterLimitProgress.collectAsStateWithLifecycle()
+    val canArchiveOrDelete by viewModel.canArchiveOrDelete.collectAsStateWithLifecycle()
+    val isLive by liveNoteController.isLive.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                    viewModel.flushPendingText()
-                }
-            }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    FlushOnPauseOrStop(onFlush = viewModel::flushPendingText)
+    val snackbarHostState = remember { SnackbarHostState() }
+    NoteEventSnackbar(events = viewModel.events, snackbarHostState = snackbarHostState)
+
+    var isEditing by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    DismissKeyboardWhenLeaving(isEditing = isEditing)
 
     Column(
         modifier =
-            modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .imePadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(
+                horizontal = 20.dp,
+                vertical = 16.dp,
+            ),
     ) {
-        EditorTopBar()
+        EditorTopBar(
+            canArchiveOrDelete = canArchiveOrDelete,
+            onArchive = viewModel::archiveActiveNote,
+            onDelete = { showDeleteDialog = true },
+            onOpenArchive = onOpenArchive,
+        )
         Spacer(Modifier.height(12.dp))
         EditorCard(
             text = text,
             onTextChange = viewModel::updateText,
             characterLimitProgress = characterLimitProgress,
+            onFocusChanged = { isEditing = it },
             modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.height(16.dp))
-        DoneButton()
+        if (isEditing) {
+            DoneButton(onClick = {
+                keyboardController?.hide()
+                focusManager.clearFocus()
+            })
+        } else {
+            NoteActionsBar(
+                isLive = isLive,
+                canArchiveOrDelete = canArchiveOrDelete,
+                onOpenArchive = onOpenArchive,
+                onDelete = { showDeleteDialog = true },
+                snackbarHostState = snackbarHostState,
+            )
+        }
+        SnackbarHost(snackbarHostState)
+    }
+
+    DeleteNoteDialog(
+        visible = showDeleteDialog,
+        onDismiss = { showDeleteDialog = false },
+        onConfirm = viewModel::deleteActiveNote,
+    )
+}
+
+/** Flushes in-progress text on onPause/onStop so process death can't lose it. */
+@Composable
+private fun FlushOnPauseOrStop(onFlush: () -> Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, onFlush) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                    onFlush()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 }
 
-/** Centered app title on top with the overflow-menu button pinned right. */
+/**
+ * Ends the editing session: hides the keyboard and clears the field's focus.
+ * System back does it while editing, and closing the keyboard by any other
+ * means (its own hide button, swipe-down) unfocuses too, so the Done pill
+ * gives way to the go-live action bar. Safe against hardware keyboards that
+ * never raise the IME.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EditorTopBar(modifier: Modifier = Modifier) {
-    val colors = LocalMononoteColors.current
-    val moreOptions = stringResource(R.string.more_options)
-    Box(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.app_name),
-            modifier = Modifier.align(Alignment.Center),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = colors.primaryText,
-        )
-        FilledIconButton(
-            onClick = {},
-            modifier =
-                Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(40.dp)
-                    .semantics { contentDescription = moreOptions },
-            shape = CircleShape,
-            colors =
-                IconButtonDefaults.filledIconButtonColors(
-                    containerColor = colors.menuButtonFill,
-                    contentColor = colors.menuButtonIcon,
-                ),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                repeat(3) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(4.dp)
-                                .background(colors.menuButtonIcon, CircleShape),
-                    )
+private fun DismissKeyboardWhenLeaving(isEditing: Boolean) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val dismissKeyboard: () -> Unit = {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+    }
+    BackHandler(enabled = isEditing) { dismissKeyboard() }
+    val imeVisible = WindowInsets.isImeVisible
+    var wasImeVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(imeVisible) {
+        if (wasImeVisible && !imeVisible && isEditing) {
+            dismissKeyboard()
+        }
+        wasImeVisible = imeVisible
+    }
+}
+
+/** Surfaces archive/delete one-shot events as snackbars. */
+@Composable
+private fun NoteEventSnackbar(
+    events: SharedFlow<EditorUiEvent>,
+    snackbarHostState: SnackbarHostState,
+) {
+    val archived = stringResource(R.string.note_archived)
+    val deleted = stringResource(R.string.note_deleted)
+    LaunchedEffect(events) {
+        events.collect { event ->
+            val message =
+                when (event) {
+                    EditorUiEvent.NOTE_ARCHIVED -> archived
+                    EditorUiEvent.NOTE_DELETED -> deleted
                 }
-            }
+            snackbarHostState.showSnackbar(message)
         }
     }
+}
+
+/** Confirmation dialog before the permanent delete. */
+@Composable
+private fun DeleteNoteDialog(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (!visible) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.delete_note_dialog_title)) },
+        text = { Text(stringResource(R.string.delete_note_dialog_message)) },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    onConfirm()
+                },
+            ) {
+                Text(stringResource(R.string.delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 /**
  * The note surface: a rounded card with a borderless multiline text field and
  * the character-limit progress ring pinned to its bottom-right corner.
+ * [onFocusChanged] reports the field's focus so the screen can swap the Done
+ * pill for the go-live action bar.
  */
 @Composable
 private fun EditorCard(
     text: String,
     onTextChange: (String) -> Unit,
     characterLimitProgress: Float,
+    onFocusChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
@@ -167,7 +258,10 @@ private fun EditorCard(
             TextField(
                 value = text,
                 onValueChange = onTextChange,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onFocusChanged { onFocusChanged(it.isFocused) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.primaryText),
                 placeholder = {
                     Text(
@@ -238,28 +332,5 @@ private fun CharacterLimitIndicator(
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
         }
-    }
-}
-
-/** Full-width pill that only dismisses the keyboard; it never saves. */
-@Composable
-private fun DoneButton(modifier: Modifier = Modifier) {
-    val colors = LocalMononoteColors.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    Button(
-        onClick = { keyboardController?.hide() },
-        modifier = modifier.fillMaxWidth().height(52.dp),
-        shape = MaterialTheme.shapes.large,
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = colors.doneButtonFill,
-                contentColor = colors.doneButtonText,
-            ),
-    ) {
-        Text(
-            text = stringResource(R.string.done),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-        )
     }
 }
