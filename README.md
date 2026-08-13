@@ -8,7 +8,7 @@ Inspired by [Mononote](https://www.digitalminimalist.com/blog/introducing-monono
 
 - **One note at a time** — no lists, no folders, no clutter
 - **Autosaves as you type** — no save button, just a subtle saving indicator
-- **Done pill while editing** — dismisses the keyboard; a go-live action bar appears when you're done: view archived notes, go live, delete
+- **Done pill while editing** — dismisses the keyboard; a go-live action bar appears when you're done: archive the current note, go live, delete
 - **Go live** — keep your current note as a persistent live notification that stays in sync as you type
 - **Archive** (recoverable) or **delete** (permanent) when you're done
 - **Restore** any archived note whenever you need it
