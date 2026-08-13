@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -128,24 +129,33 @@ fun ArchiveScreen(
     }
 }
 
-/** Back arrow and title, matching the editor's top-bar typography. */
+/** Back arrow and centered title, matching the editor's top-bar typography. */
 @Composable
 private fun ArchiveTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+    Box(modifier = modifier.fillMaxWidth()) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                tint = colors.primaryText,
+            )
         }
         Text(
             text = stringResource(R.string.archived_notes),
+            modifier = Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             color = colors.primaryText,
+        )
+        Spacer(
+            modifier = Modifier.align(Alignment.CenterEnd).size(48.dp),
         )
     }
 }
