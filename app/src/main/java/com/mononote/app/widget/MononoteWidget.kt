@@ -20,10 +20,7 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Box
-import androidx.glance.layout.Column
-import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -70,34 +67,21 @@ private fun MononoteWidgetContent(noteText: String) {
                 .padding(all = widgetContentPadding)
                 .clickable(openApp),
     ) {
-        Column {
-            Text(
-                text = context.getString(R.string.app_name),
-                style =
-                    TextStyle(
-                        color = WidgetPalette.secondaryText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                    ),
-            )
-            Spacer(GlanceModifier.height(wordmarkSpacer))
-            Text(
-                text = displayText,
-                style =
-                    TextStyle(
-                        color = textColor,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                maxLines = noteMaxLines(size),
-            )
-        }
+        Text(
+            text = displayText,
+            style =
+                TextStyle(
+                    color = textColor,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                ),
+            maxLines = noteMaxLines(size),
+        )
     }
 }
 
 private fun noteMaxLines(size: DpSize): Int {
-    val availableHeight =
-        size.height - (widgetContentPadding * 2) - wordmarkLineHeight - wordmarkSpacer
+    val availableHeight = size.height - (widgetContentPadding * 2)
     return (availableHeight / noteLineHeight).toInt().coerceAtLeast(1)
 }
 
@@ -111,6 +95,4 @@ private object WidgetPalette {
 }
 
 private val widgetContentPadding = 16.dp
-private val wordmarkSpacer = 6.dp
-private val wordmarkLineHeight = 14.dp
-private val noteLineHeight = 22.dp
+private val noteLineHeight = 26.dp
