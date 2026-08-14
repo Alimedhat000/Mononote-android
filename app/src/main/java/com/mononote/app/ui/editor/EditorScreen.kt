@@ -18,11 +18,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +54,8 @@ import com.mononote.app.R
 import com.mononote.app.data.NotesRepository
 import com.mononote.app.notification.LiveNoteController
 import com.mononote.app.ui.theme.LocalMononoteColors
+import com.mononote.app.ui.theme.MononoteAlertDialog
+import com.mononote.app.ui.theme.MononoteSnackbarHost
 import kotlinx.coroutines.flow.SharedFlow
 
 /**
@@ -93,55 +93,105 @@ fun EditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     NoteEventSnackbar(events = viewModel.events, snackbarHostState = snackbarHostState)
 
+    EditorScreenLayout(
+        state = EditorLayoutState(text, characterLimitProgress, canArchiveOrDelete, isLive),
+        callbacks =
+            EditorLayoutCallbacks(
+                onOpenArchive = onOpenArchive,
+                onTextChange = viewModel::updateText,
+                onArchive = viewModel::archiveActiveNote,
+                onDelete = viewModel::deleteActiveNote,
+                onDone = viewModel::flushPendingText,
+            ),
+        snackbarHostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
+/** Presentation state for the editor layout, hoisted from [EditorViewModel]. */
+private data class EditorLayoutState(
+    val text: String,
+    val characterLimitProgress: Float,
+    val canArchiveOrDelete: Boolean,
+    val isLive: Boolean,
+)
+
+/** User actions for the editor layout, wired to the [EditorViewModel]. */
+private data class EditorLayoutCallbacks(
+    val onOpenArchive: () -> Unit,
+    val onTextChange: (String) -> Unit,
+    val onArchive: () -> Unit,
+    val onDelete: () -> Unit,
+    val onDone: () -> Unit,
+)
+
+/**
+ * The editor's layout: a top bar, the note card, and the animated bottom bar
+ * in a column, with the snackbar host overlaid at the bottom so a toast floats
+ * on top of the buttons instead of taking layout height and pushing them up.
+ * The character-limit ring lives in the card and only shows while typing.
+ */
+@Composable
+private fun EditorScreenLayout(
+    state: EditorLayoutState,
+    callbacks: EditorLayoutCallbacks,
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+) {
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     DismissKeyboardWhenLeaving(isEditing = isEditing)
 
-    Column(
-        modifier =
-            modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(
-                horizontal = 20.dp,
-                vertical = 16.dp,
-            ),
-    ) {
-        EditorTopBar(
-            onOpenArchive = onOpenArchive,
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            EditorTopBar(onOpenArchive = callbacks.onOpenArchive)
+            Spacer(Modifier.height(12.dp))
+            CenteredEditorCard(
+                text = state.text,
+                onTextChange = callbacks.onTextChange,
+                characterLimitProgress = state.characterLimitProgress,
+                onFocusChanged = { isEditing = it },
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.height(16.dp))
+            AnimatedEditorActions(
+                state =
+                    EditorBottomBarState(
+                        isEditing = isEditing,
+                        isLive = state.isLive,
+                        canArchiveOrDelete = state.canArchiveOrDelete,
+                        noteText = state.text,
+                    ),
+                onArchive = callbacks.onArchive,
+                onDelete = { showDeleteDialog = true },
+                onDone = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    callbacks.onDone()
+                },
+                snackbarHostState = snackbarHostState,
+            )
+        }
+        MononoteSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
         )
-        Spacer(Modifier.height(12.dp))
-        CenteredEditorCard(
-            text = text,
-            onTextChange = viewModel::updateText,
-            characterLimitProgress = characterLimitProgress,
-            onFocusChanged = { isEditing = it },
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.height(16.dp))
-        AnimatedEditorActions(
-            state =
-                EditorBottomBarState(
-                    isEditing = isEditing,
-                    isLive = isLive,
-                    canArchiveOrDelete = canArchiveOrDelete,
-                    noteText = text,
-                ),
-            onArchive = viewModel::archiveActiveNote,
-            onDelete = { showDeleteDialog = true },
-            onDone = {
-                keyboardController?.hide()
-                focusManager.clearFocus()
-                viewModel.flushPendingText()
-            },
-            snackbarHostState = snackbarHostState,
-        )
-        SnackbarHost(snackbarHostState)
     }
 
     DeleteNoteDialog(
         visible = showDeleteDialog,
         onDismiss = { showDeleteDialog = false },
-        onConfirm = viewModel::deleteActiveNote,
+        onConfirm = callbacks.onDelete,
     )
 }
 
@@ -216,7 +266,7 @@ private fun DeleteNoteDialog(
     onConfirm: () -> Unit,
 ) {
     if (!visible) return
-    AlertDialog(
+    MononoteAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.delete_note_dialog_title)) },
         text = { Text(stringResource(R.string.delete_note_dialog_message)) },
@@ -271,9 +321,9 @@ private fun CenteredEditorCard(
 
 /**
  * The note surface: a rounded card with a borderless multiline text field and
- * the character-limit progress ring pinned to its bottom-right corner.
- * [onFocusChanged] reports the field's focus so the screen can swap the Done
- * pill for the go-live action bar.
+ * the character-limit progress ring, shown only while the field is focused so
+ * it never clutters the idle card. [onFocusChanged] reports the field's focus
+ * so the screen can swap the Done pill for the go-live action bar.
  */
 @Composable
 private fun EditorCard(
@@ -284,6 +334,7 @@ private fun EditorCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
+    var focused by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -296,7 +347,10 @@ private fun EditorCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .onFocusChanged { onFocusChanged(it.isFocused) },
+                        .onFocusChanged {
+                            focused = it.isFocused
+                            onFocusChanged(it.isFocused)
+                        },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.primaryText),
                 placeholder = {
                     Text(
@@ -317,10 +371,12 @@ private fun EditorCard(
                         cursorColor = colors.primaryText,
                     ),
             )
-            CharacterLimitIndicator(
-                progress = characterLimitProgress,
-                modifier = Modifier.align(Alignment.BottomEnd),
-            )
+            if (focused) {
+                CharacterLimitIndicator(
+                    progress = characterLimitProgress,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
+            }
         }
     }
 }

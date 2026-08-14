@@ -20,7 +20,7 @@ import timber.log.Timber
 /**
  * Builds and posts the live-note notification: a persistent, non-dismissable
  * notification that shows the note's current text as its title, opens the
- * editor on tap, and offers a Stop action.
+ * editor on tap, and stops the live service when the user swipes it away.
  *
  * On API 36+ the notification requests promotion to a Live Update (status-bar
  * chip, expanded on the lock screen) using an eligible BigTextStyle with
@@ -28,12 +28,20 @@ import timber.log.Timber
  * BigTextStyle without the promotion request. Promotion is an enhancement, not
  * a requirement: when the user has disabled live updates in settings the same
  * notification still posts as a regular ongoing one.
+ *
+ * A delete intent fires when the user dismisses the notification (Android 13+,
+ * where foreground-service notifications are dismissible), sending
+ * [LiveNoteService.ACTION_STOP] so the service stops and the editor's Go Live
+ * state flips back to idle.
  */
 object LiveNoteNotifications {
     const val CHANNEL_ID = "live_note"
 
     /** Notification id of the live-note foreground notification. */
     const val NOTIFICATION_ID = 1001
+
+    /** PendingIntent request code for the dismissal (stop-live) intent. */
+    private const val REQUEST_STOP_LIVE = 1001
 
     /**
      * Title length cap: notes longer than this are split into a truncated
@@ -113,6 +121,13 @@ object LiveNoteNotifications {
                 Intent(context, MainActivity::class.java),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
+        val stopLive =
+            PendingIntent.getService(
+                context,
+                REQUEST_STOP_LIVE,
+                Intent(context, LiveNoteService::class.java).setAction(LiveNoteService.ACTION_STOP),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
         val builder =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
@@ -120,6 +135,7 @@ object LiveNoteNotifications {
                 .setContentTitle(titleText)
                 .setContentText(null)
                 .setContentIntent(openApp)
+                .setDeleteIntent(stopLive)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)

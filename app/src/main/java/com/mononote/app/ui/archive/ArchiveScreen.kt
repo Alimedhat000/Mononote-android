@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
@@ -27,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +49,8 @@ import com.mononote.app.R
 import com.mononote.app.data.Note
 import com.mononote.app.data.NotesRepository
 import com.mononote.app.ui.theme.LocalMononoteColors
+import com.mononote.app.ui.theme.MononoteAlertDialog
+import com.mononote.app.ui.theme.MononoteSnackbarHost
 import com.mononote.app.ui.theme.MononoteTheme
 import kotlinx.coroutines.flow.SharedFlow
 import java.text.DateFormat
@@ -112,7 +112,7 @@ fun ArchiveScreen(
                 }
             }
         }
-        SnackbarHost(snackbarHostState)
+        MononoteSnackbarHost(snackbarHostState)
     }
 
     uiState.pendingDelete?.let {
@@ -288,7 +288,7 @@ private fun DeleteNoteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
+    MononoteAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.delete_note_dialog_title)) },
         text = { Text(stringResource(R.string.delete_note_dialog_message)) },
@@ -311,7 +311,7 @@ private fun RestoreNoteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
+    MononoteAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.restore_note_dialog_title)) },
         text = { Text(stringResource(R.string.restore_note_dialog_message)) },
