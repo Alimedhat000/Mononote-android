@@ -131,6 +131,7 @@ fun EditorScreen(
             onDone = {
                 keyboardController?.hide()
                 focusManager.clearFocus()
+                viewModel.flushPendingText()
             },
             snackbarHostState = snackbarHostState,
         )
