@@ -51,4 +51,43 @@ class SettingsDataStoreTest {
             settings.saveActiveNoteSnapshot("second")
             assertEquals("second", settings.activeNoteSnapshot.first())
         }
+
+    @Test
+    fun themeModeDefaultsToSystem() =
+        withDataStore { settings ->
+            assertEquals(ThemeMode.SYSTEM, settings.themeMode.first())
+        }
+
+    @Test
+    fun savedThemeModeCanBeReadBack() =
+        withDataStore { settings ->
+            settings.saveThemeMode(ThemeMode.DARK)
+            assertEquals(ThemeMode.DARK, settings.themeMode.first())
+        }
+
+    @Test
+    fun fontFamilyDefaultsToDefault() =
+        withDataStore { settings ->
+            assertEquals(FontFamilyOption.DEFAULT, settings.fontFamily.first())
+        }
+
+    @Test
+    fun savedFontFamilyCanBeReadBack() =
+        withDataStore { settings ->
+            settings.saveFontFamily(FontFamilyOption.MONOSPACE)
+            assertEquals(FontFamilyOption.MONOSPACE, settings.fontFamily.first())
+        }
+
+    @Test
+    fun fontSizeDefaultsToMedium() =
+        withDataStore { settings ->
+            assertEquals(FontSizeOption.MEDIUM, settings.fontSize.first())
+        }
+
+    @Test
+    fun savedFontSizeCanBeReadBack() =
+        withDataStore { settings ->
+            settings.saveFontSize(FontSizeOption.LARGE)
+            assertEquals(FontSizeOption.LARGE, settings.fontSize.first())
+        }
 }

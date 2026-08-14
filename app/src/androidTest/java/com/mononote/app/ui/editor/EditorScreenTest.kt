@@ -40,6 +40,7 @@ class EditorScreenTest {
                 EditorScreen(
                     repository = app.repository,
                     onOpenArchive = {},
+                    onOpenSettings = {},
                     liveNoteController = app.liveNoteController,
                 )
             }

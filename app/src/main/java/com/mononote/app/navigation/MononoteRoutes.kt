@@ -9,4 +9,10 @@ object MononoteRoutes {
 
     /** The archived-notes list screen. */
     const val ARCHIVE = "archive"
+
+    /** The settings screen. */
+    const val SETTINGS = "settings"
+
+    /** The about screen, reached from settings. */
+    const val SETTINGS_ABOUT = "settings/about"
 }

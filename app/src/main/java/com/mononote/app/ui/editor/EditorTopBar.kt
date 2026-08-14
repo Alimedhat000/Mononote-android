@@ -35,6 +35,7 @@ import com.composables.icons.lucide.R as LucideR
 @Composable
 fun EditorTopBar(
     onOpenArchive: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalMononoteColors.current
@@ -47,19 +48,21 @@ fun EditorTopBar(
             color = colors.primaryText,
         )
         Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-            OverflowMenu(onOpenArchive = onOpenArchive)
+            OverflowMenu(onOpenArchive = onOpenArchive, onOpenSettings = onOpenSettings)
         }
     }
 }
 
 /**
- * The overflow menu: Archived Notes and Settings, always available. Settings is
- * a placeholder entry for a later phase (dark/light mode, font, widget and
- * live-notification settings, feedback, about). The bottom action bar already
- * archives and deletes the current note, so the menu does not repeat it.
+ * The overflow menu: Archived Notes and Settings, always available. The bottom
+ * action bar already archives and deletes the current note, so the menu does
+ * not repeat it.
  */
 @Composable
-private fun OverflowMenu(onOpenArchive: () -> Unit) {
+private fun OverflowMenu(
+    onOpenArchive: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val colors = LocalMononoteColors.current
     val moreOptions = stringResource(R.string.more_options)
     var menuExpanded by remember { mutableStateOf(false) }
@@ -109,7 +112,10 @@ private fun OverflowMenu(onOpenArchive: () -> Unit) {
                     OverflowMenuIcon(iconId = LucideR.drawable.lucide_ic_settings)
                 },
                 text = { Text(stringResource(R.string.settings)) },
-                onClick = { menuExpanded = false },
+                onClick = {
+                    menuExpanded = false
+                    onOpenSettings()
+                },
             )
         }
     }

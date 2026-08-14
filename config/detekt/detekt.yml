@@ -32,6 +32,11 @@ complexity:
       # meaningless there.
       - "**/test/**/*.kt"
       - "**/androidTest/**/*.kt"
+  # Compose screens legitimately carry `modifier` and a `viewModel` factory
+  # param with defaults; count only required parameters so a screen's real
+  # API stays under the threshold.
+  LongParameterList:
+    ignoreDefaultParameters: true
 
 Compose:
   ComposableAnnotationNaming:

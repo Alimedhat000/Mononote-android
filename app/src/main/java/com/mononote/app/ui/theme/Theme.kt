@@ -8,7 +8,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 private val LightColorScheme =
     lightColorScheme(
@@ -42,12 +45,20 @@ val MononoteShapes =
     )
 
 /**
- * Applies the Mononote theme: a system-driven light/dark palette exposed via
+ * Applies the Mononote theme: a light/dark palette exposed via
  * [LocalMononoteColors], plus the Mononote typography and shapes.
+ *
+ * @param darkTheme Whether the dark palette is active. Defaults to following
+ *   the system; the settings screen can force a scheme.
+ * @param fontFamily Family for the note text and app titles.
+ * @param bodyTextSize Size of the note text (bodyLarge).
+ * @param content The rest of the app UI.
  */
 @Composable
 fun MononoteTheme(
     darkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme(),
+    fontFamily: FontFamily = FontFamily.Default,
+    bodyTextSize: TextUnit = 18.sp,
     content: @Composable () -> Unit,
 ) {
     val mononoteColors = if (darkTheme) DarkMononoteColors else LightMononoteColors
@@ -56,7 +67,7 @@ fun MononoteTheme(
     CompositionLocalProvider(LocalMononoteColors provides mononoteColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = MononoteTypography,
+            typography = mononoteTypography(fontFamily, bodyTextSize),
             shapes = MononoteShapes,
             content = content,
         )

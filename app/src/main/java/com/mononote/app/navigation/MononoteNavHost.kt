@@ -9,12 +9,15 @@ import androidx.navigation.compose.rememberNavController
 import com.mononote.app.MononoteApp
 import com.mononote.app.ui.archive.ArchiveScreen
 import com.mononote.app.ui.editor.EditorScreen
+import com.mononote.app.ui.settings.AboutScreen
+import com.mononote.app.ui.settings.SettingsScreen
 
 /**
  * Sets up the app's navigation graph: the [MononoteRoutes.EDITOR] screen as
- * the start destination and the [MononoteRoutes.ARCHIVE] archive-list
- * destination. The editor's overflow menu and go-live action bar are wired to
- * the archive route and the live-note controller.
+ * the start destination, the [MononoteRoutes.ARCHIVE] archive-list
+ * destination, and the settings screens ([MononoteRoutes.SETTINGS] with its
+ * about subscreen). The editor's overflow menu and go-live action bar are
+ * wired to the archive route and the live-note controller.
  */
 @Composable
 fun MononoteNavHost(navController: NavHostController = rememberNavController()) {
@@ -27,6 +30,7 @@ fun MononoteNavHost(navController: NavHostController = rememberNavController()) 
             EditorScreen(
                 repository = app.repository,
                 onOpenArchive = { navController.navigate(MononoteRoutes.ARCHIVE) },
+                onOpenSettings = { navController.navigate(MononoteRoutes.SETTINGS) },
                 liveNoteController = app.liveNoteController,
             )
         }
@@ -35,6 +39,16 @@ fun MononoteNavHost(navController: NavHostController = rememberNavController()) 
                 repository = app.repository,
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable(MononoteRoutes.SETTINGS) {
+            SettingsScreen(
+                settingsDataStore = app.settingsDataStore,
+                onBack = { navController.popBackStack() },
+                onOpenAbout = { navController.navigate(MononoteRoutes.SETTINGS_ABOUT) },
+            )
+        }
+        composable(MononoteRoutes.SETTINGS_ABOUT) {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
     }
 }

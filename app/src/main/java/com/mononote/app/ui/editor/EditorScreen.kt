@@ -73,6 +73,7 @@ import kotlinx.coroutines.flow.SharedFlow
  * @param repository Single source of truth for note data; injects the
  *   [EditorViewModel].
  * @param onOpenArchive Navigates to the archived-notes screen.
+ * @param onOpenSettings Navigates to the settings screen.
  * @param liveNoteController Mirrors whether the live-note service is running.
  * @param modifier Modifier for the root column.
  */
@@ -80,6 +81,7 @@ import kotlinx.coroutines.flow.SharedFlow
 fun EditorScreen(
     repository: NotesRepository,
     onOpenArchive: () -> Unit,
+    onOpenSettings: () -> Unit,
     liveNoteController: LiveNoteController,
     modifier: Modifier = Modifier,
     viewModel: EditorViewModel = viewModel(factory = EditorViewModel.factory(repository)),
@@ -98,6 +100,7 @@ fun EditorScreen(
         callbacks =
             EditorLayoutCallbacks(
                 onOpenArchive = onOpenArchive,
+                onOpenSettings = onOpenSettings,
                 onTextChange = viewModel::updateText,
                 onArchive = viewModel::archiveActiveNote,
                 onDelete = viewModel::deleteActiveNote,
@@ -119,6 +122,7 @@ private data class EditorLayoutState(
 /** User actions for the editor layout, wired to the [EditorViewModel]. */
 private data class EditorLayoutCallbacks(
     val onOpenArchive: () -> Unit,
+    val onOpenSettings: () -> Unit,
     val onTextChange: (String) -> Unit,
     val onArchive: () -> Unit,
     val onDelete: () -> Unit,
@@ -154,7 +158,10 @@ private fun EditorScreenLayout(
                     .imePadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
-            EditorTopBar(onOpenArchive = callbacks.onOpenArchive)
+            EditorTopBar(
+                onOpenArchive = callbacks.onOpenArchive,
+                onOpenSettings = callbacks.onOpenSettings,
+            )
             Spacer(Modifier.height(12.dp))
             CenteredEditorCard(
                 text = state.text,
