@@ -11,3 +11,4 @@
 local.properties
 app/build
 node_modules/
+keystore.properties
